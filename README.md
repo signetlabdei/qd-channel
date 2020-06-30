@@ -34,7 +34,7 @@ First, clone the main ns-3 repository:
 git clone https://gitlab.com/nsnam/ns-3-dev ns-3-dev
 ```
 
-Then, clone the quic module:
+Then, clone the qd-channel module:
 ```bash
 git clone https://github.com/signetlabdei/qd-channel ns-3-dev/contrib/qd-channel
 ```
