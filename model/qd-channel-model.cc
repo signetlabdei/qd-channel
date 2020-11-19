@@ -540,6 +540,16 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
   uint64_t bSize = bAntenna->GetNumberOfElements ();
   uint64_t aSize = aAntenna->GetNumberOfElements ();
 
+  // std::cout << "timestep=" << timestep <<
+  //               ", aId=" << aId <<
+  //               ", bId=" << bId <<
+  //               ", m_ns3IdToRtIdMap[aId]=" << m_ns3IdToRtIdMap.at (aId) <<
+  //               ", m_ns3IdToRtIdMap[bId]=" << m_ns3IdToRtIdMap.at (bId) <<
+  //               ", channelId=" << channelId <<
+  //               ", bSize=" << bSize <<
+  //               ", aSize=" << aSize <<
+  //               std::endl;
+
   // channel coffecient H[u][s][n];
   // considering only 1 cluster for retrocompatibility -> n=1
   MatrixBasedChannelModel::Complex3DVector H;
@@ -580,6 +590,19 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
       double pgTimesGains = pathGain * bElementGain * aElementGain;
       std::complex<double> complexRay = pgTimesGains * std::polar (1.0, initialPhase);
 
+      // std::cout << "qdInfo.delay_s[mpcIndex]=" << qdInfo.delay_s[mpcIndex] <<
+      //               ", qdInfo.phase_rad[mpcIndex]=" << qdInfo.phase_rad[mpcIndex] <<
+      //               ", qdInfo.pathGain_dbpow[mpcIndex]=" << qdInfo.pathGain_dbpow[mpcIndex] <<
+      //               ", bAngle=" << bAngle <<
+      //               ", aAngle=" << aAngle <<
+      //               std::endl;
+      // std::cout << "initialPhase=" << initialPhase <<
+      //               ", pathGain=" << pathGain <<
+      //               ", bElementGain=" << bElementGain <<
+      //               ", aElementGain=" << aElementGain <<
+      //               ", pgTimesGains=" << pgTimesGains <<
+      //               ", complexRay=" << complexRay
+      //               << std::endl;
       
       for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
         {
@@ -615,6 +638,16 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
 
   channelParams->m_generatedTime = Simulator::Now ();
   channelParams->m_nodeIds = std::make_pair (aId, bId);
+
+  // std::cout << "H matrix at timestep " << +timestep << std::endl;
+  // for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
+  //     {
+  //       for (uint64_t aIndex = 0; aIndex < aSize; ++aIndex)
+  //         {
+  //          std::cout << std::showpos << std::real (H[bIndex][aIndex][0]) << std::imag (H[bIndex][aIndex][0]) << "j,";
+  //         }
+  //       std::cout << ";..." << std::endl;
+  //     }
 
   return channelParams;
 }
