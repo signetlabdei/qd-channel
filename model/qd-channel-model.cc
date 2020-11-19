@@ -388,7 +388,8 @@ void
 QdChannelModel::TrimFolderName (std::string& folder)
 {
   // avoid starting with multiple '/'
-  while (folder.front () == '/')
+  while (folder.front () == '/' &&
+         folder.substr (1, folder.size ()).front () == '/')
     {
       folder = folder.substr (1, folder.size ());
     }
