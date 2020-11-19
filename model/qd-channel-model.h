@@ -197,9 +197,10 @@ private:
    * Parse numerice CSV string
    *
    * \param str CSV-formatted string
+   * \param toRad if true, convert from degrees to radians, otherwise, do nothing
    * \return vector of parsed numeric values
    */
-  std::vector<double> ParseCsv (const std::string& str);
+  std::vector<double> ParseCsv (const std::string& str, bool toRad = false);
 
   /**
    * Trim folder name in order to avoid '/' at the beginning of the file name
@@ -218,10 +219,10 @@ private:
     std::vector<double> delay_s;
     std::vector<double> pathGain_dbpow;
     std::vector<double> phase_rad;
-    std::vector<double> elAod_deg;
-    std::vector<double> azAod_deg;
-    std::vector<double> elAoa_deg;
-    std::vector<double> azAoa_deg;
+    std::vector<double> elAod_rad;
+    std::vector<double> azAod_rad;
+    std::vector<double> elAoa_rad;
+    std::vector<double> azAoa_rad;
   };
 
   std::map<uint32_t, Ptr<const MatrixBasedChannelModel::ChannelMatrix> > m_channelMap; //!< map containing the channel realizations indexed by channel key
