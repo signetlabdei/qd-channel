@@ -137,11 +137,12 @@ private:
 
   /**
    * Get the channel matrix between a and b using the ray tracer data
-   * \param mobilityTx transmitter mobility model
-   * \param mobilityRx receiver mobility model
-   * \param txAntenna the tx antenna array
-   * \param rxAntenna the rx antenna array
-   * \return the channel realization
+   *
+   * \param aMob mobility model of the a device
+   * \param bMob mobility model of the b device
+   * \param aAntenna antenna of the a device
+   * \param bAntenna antenna of the b device
+   * \return the channel matrix
    */
   Ptr<const MatrixBasedChannelModel::ChannelMatrix> GetNewChannel (Ptr<const MobilityModel> aMob,
                                                                    Ptr<const MobilityModel> bMob,
