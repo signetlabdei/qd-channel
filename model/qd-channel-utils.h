@@ -25,18 +25,11 @@
 #ifndef QD_CHANNEL_UTILS_H
 #define QD_CHANNEL_UTILS_H
 
-#include <fstream>
-#include "ns3/core-module.h"
-#include "ns3/qd-channel-model.h"
-#include "ns3/three-gpp-antenna-array-model.h"
-#include "ns3/three-gpp-spectrum-propagation-loss-model.h"
-#include "ns3/simple-net-device.h"
-#include "ns3/node-container.h"
-#include "ns3/constant-position-mobility-model.h"
-#include "ns3/lte-spectrum-value-helper.h"
-
 
 namespace ns3 {
+
+class MatrixBasedChannelModel;
+class ThreeGppAntennaArrayModel;
 
 /**
  * Compute the eigenvector associated to the largest eigenvalue.
