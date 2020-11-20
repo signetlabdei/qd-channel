@@ -140,6 +140,8 @@ QdChannelModel::ReadNodesPosition ()
       std::getline (ss, pos, ',');
       double z = ::atof (pos.c_str ());
       Vector3D nodePosition {x,y,z};
+
+      NS_LOG_DEBUG ("Trying to match position from file: (" << x << ", " << y << ", " << z << ")");
       m_nodePositionList.push_back (nodePosition);
       bool found {false};
       uint32_t matchedNodeId;
@@ -150,6 +152,7 @@ QdChannelModel::ReadNodesPosition ()
             {
               // TODO automatically import nodes' initial positions to avoid manual setting every time the scenario changes
               Vector3D pos = mm->GetPosition ();
+              NS_LOG_DEBUG ("Checking node with position: (" << pos.x << ", " << pos.y << ", " << pos.z << ")");
               if (x == pos.x && y == pos.y && z == pos.z)
                 {
                   found = true;
@@ -159,6 +162,11 @@ QdChannelModel::ReadNodesPosition ()
                 }
             }
         }
+      if (!found)
+      {
+        NS_LOG_ERROR ("Position not found: (" << x << ", " << y << ", " << z << ")");
+      }
+
       NS_ABORT_MSG_IF (!found, "Position not matched - did you install the mobility model before the channel is created");
 
       rtIdToNs3IdMap.insert (std::make_pair (id, matchedNodeId));
