@@ -6,6 +6,7 @@ def build(bld):
 
     module.source = [
         'model/qd-channel-model.cc',
+        'model/qd-channel-utils.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('qd-channel')
@@ -23,7 +24,7 @@ def build(bld):
     headers.module = 'qd-channel'
     headers.source = [
         'model/qd-channel-model.h',
-        'model/qd-channel-utils.h'
+        'model/qd-channel-utils.h',
         ]
 
     if bld.env.ENABLE_EXAMPLES:
