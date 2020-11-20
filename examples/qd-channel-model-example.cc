@@ -166,10 +166,14 @@ main (int argc, char *argv[])
   spectrumLossModel = CreateObjectWithAttributes<ThreeGppSpectrumPropagationLossModel> ("ChannelModel", PointerValue (qdChannel));
 
   // Create the antenna objects and set their dimensions
-  txAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2), "NumRows", UintegerValue (2));
+  txAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2),
+                                                                     "NumRows", UintegerValue (2),
+                                                                     "IsotropicElements", BooleanValue (true));
   txNode->AggregateObject(txAntenna);
 
-  rxAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2), "NumRows", UintegerValue (2));
+  rxAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2),
+                                                                     "NumRows", UintegerValue (2),
+                                                                     "IsotropicElements", BooleanValue (true));
   rxNode->AggregateObject(rxAntenna);
 
   // Initialize the devices in the ThreeGppSpectrumPropagationLossModel
