@@ -23,6 +23,7 @@ def build(bld):
     headers.module = 'qd-channel'
     headers.source = [
         'model/qd-channel-model.h',
+        'model/qd-channel-utils.h'
         ]
 
     if bld.env.ENABLE_EXAMPLES:

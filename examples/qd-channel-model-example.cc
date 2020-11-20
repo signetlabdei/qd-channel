@@ -21,7 +21,7 @@
  * This example shows how to configure the QdChannelModel channel model to
  * compute the SNR between two nodes.
  * The default scenario (Indoor1) is shown.
- * Each node hosts a SimpleNetDevice and has an antenna array with 4 elements.
+ * Each node hosts a SimpleNetDevice and has a 2x2 antenna array.
  */
 
 #include <fstream>
@@ -33,6 +33,7 @@
 #include "ns3/node-container.h"
 #include "ns3/constant-position-mobility-model.h"
 #include "ns3/lte-spectrum-value-helper.h"
+#include "ns3/qd-channel-utils.h"
 
 NS_LOG_COMPONENT_DEFINE ("ThreeGppChannelExample");
 
@@ -52,153 +53,13 @@ Ptr<MobilityModel> rxMob;
 Ptr<ThreeGppAntennaArrayModel> txAntenna;
 Ptr<ThreeGppAntennaArrayModel> rxAntenna;
 
-ThreeGppAntennaArrayModel::ComplexVector
-GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter, double threshold)
-{
-  ThreeGppAntennaArrayModel::ComplexVector antennaWeights;
-  uint16_t arraySize = A.size ();
-  for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
-    {
-      antennaWeights.push_back (A[0][eIndex]);
-    }
-
-
-  uint32_t iter = 0;
-  double diff = 1;
-  while (iter < nIter && diff > threshold)
-    {
-      ThreeGppAntennaArrayModel::ComplexVector antennaWeightsNew;
-
-      for (uint16_t row = 0; row < arraySize; row++)
-        {
-          std::complex<double> sum (0,0);
-          for (uint16_t col = 0; col < arraySize; col++)
-            {
-              sum += A[row][col] * antennaWeights[col];
-            }
-
-          antennaWeightsNew.push_back (sum);
-        }
-      //normalize antennaWeights;
-      double weighbSum = 0;
-      for (uint16_t i = 0; i < arraySize; i++)
-        {
-          weighbSum += norm (antennaWeightsNew[i]);
-        }
-      for (uint16_t i = 0; i < arraySize; i++)
-        {
-          antennaWeightsNew[i] = antennaWeightsNew[i] / sqrt (weighbSum);
-        }
-      diff = 0;
-      for (uint16_t i = 0; i < arraySize; i++)
-        {
-          diff += std::norm (antennaWeightsNew[i] - antennaWeights[i]);
-        }
-      iter++;
-      antennaWeights = antennaWeightsNew;
-    }
-  NS_LOG_DEBUG ("antennaWeigths stopped after " << iter << " iterations with diff=" << diff << std::endl);
-
-  return antennaWeights;
-}
-
-std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector>
-ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params)
-{
-  // params
-  uint32_t svdIter = 30;
-  double svdThresh = 1e-8;
-
-  //generate transmitter side spatial correlation matrix
-  uint16_t aSize = params->m_channel.size ();
-  uint16_t bSize = params->m_channel[0].size ();
-  uint16_t clusterSize = params->m_channel[0][0].size ();
-
-  // compute narrowband channel by summing over the cluster index
-  MatrixBasedChannelModel::Complex2DVector narrowbandChannel;
-  narrowbandChannel.resize (aSize);
-
-  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
-    {
-      narrowbandChannel[aIndex].resize (bSize);
-    }
-
-  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
-    {
-      for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
-        {
-          std::complex<double> cSum (0, 0);
-          for (uint16_t cIndex = 0; cIndex < clusterSize; cIndex++)
-            {
-              cSum += params->m_channel[aIndex][bIndex][cIndex];
-            }
-          narrowbandChannel[aIndex][bIndex] = cSum;
-        }
-    }
-
-  //compute the transmitter side spatial correlation matrix bQ = H*H, where H is the sum of H_n over n clusters.
-  MatrixBasedChannelModel::Complex2DVector bQ;
-  bQ.resize (bSize);
-
-  for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
-    {
-      bQ[bIndex].resize (bSize);
-    }
-
-  for (uint16_t b1Index = 0; b1Index < bSize; b1Index++)
-    {
-      for (uint16_t b2Index = 0; b2Index < bSize; b2Index++)
-        {
-          std::complex<double> aSum (0,0);
-          for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
-            {
-              aSum += std::conj (narrowbandChannel[aIndex][b1Index]) * narrowbandChannel[aIndex][b2Index];
-            }
-          bQ[b1Index][b2Index] += aSum;
-        }
-    }
-
-  //calculate beamforming vector from spatial correlation matrix
-  ThreeGppAntennaArrayModel::ComplexVector bW = GetFirstEigenvector (bQ, svdIter, svdThresh);
-
-  //compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over n clusters.
-  MatrixBasedChannelModel::Complex2DVector aQ;
-  aQ.resize (aSize);
-
-  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
-    {
-      aQ[aIndex].resize (aSize);
-    }
-
-  for (uint16_t a1Index = 0; a1Index < aSize; a1Index++)
-    {
-      for (uint16_t a2Index = 0; a2Index < aSize; a2Index++)
-        {
-          std::complex<double> bSum (0,0);
-          for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
-            {
-              bSum += narrowbandChannel[a1Index][bIndex] * std::conj (narrowbandChannel[a2Index][bIndex]);
-            }
-          aQ[a1Index][a2Index] += bSum;
-        }
-    }
-
-  //calculate beamforming vector from spatial correlation matrix.
-  ThreeGppAntennaArrayModel::ComplexVector aW = GetFirstEigenvector (aQ, svdIter, svdThresh);
-
-  for (size_t i = 0; i < aW.size (); ++i)
-    {
-      aW[i] = std::conj (aW[i]);
-    }
-
-  return std::make_pair (bW, aW);
-}
 
 /**
  * Perform the beamforming using the SVD beamforming method
  * \param txDevice the device performing the beamforming
  * \param txAntenna the antenna object associated to txDevice
  * \param rxDevice the device towards which point the beam
+ * \param rxAntenna the antenna object associated to rxDevice
  */
 static void
 DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayModel> txAntenna, Ptr<NetDevice> rxDevice, Ptr<ThreeGppAntennaArrayModel> rxAntenna)
@@ -214,18 +75,13 @@ DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayModel> txAntenna
   rxAntenna->SetBeamformingVector (std::get<1> (bfVectors));
 }
 
+
 /*
  * Compute the average SNR
- * \param txMob the tx mobility model
- * \param rxMob the rx mobility model
- * \param txPow the transmitting power in dBm
- * \param noiseFigure the noise figure in dB
  */
 static void
 ComputeSnr ()
 {
-  // TODO: update to mmWave
-
   // Create the tx PSD using the LteSpectrumValueHelper
   // 100 RBs corresponds to 18 MHz (1 RB = 180 kHz)
   // EARFCN 100 corresponds to 2125.00 MHz
@@ -264,6 +120,7 @@ ComputeSnr ()
 
   Simulator::Schedule (MilliSeconds (timeRes), &ComputeSnr);
 }
+
 
 int
 main (int argc, char *argv[])
