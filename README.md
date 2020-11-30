@@ -49,3 +49,14 @@ Configure and build ns-3 from the `ns-3-dev` folder:
 ```
 
 This module does not provide Python bindings at the moment, they will be added in the near future.
+
+### Documentation ###
+
+To compile the documentation, please follow the instructions from the [ns-3 manual](https://www.nsnam.org/docs/manual/html/documentation.html).
+
+1. Istall the dcumentation-specific depdendencies as described in the [ns-3 installation guide](https://www.nsnam.org/wiki/Installation)
+1. You might need to fix the ImageMagick permissions for ghostscript files
+1. In `doc/models/source/index.rst`, add `qd-channel` in the TOC tree
+1. In `doc/models/Makefile`, add `../../contrib/qd-channel/doc/qd-channel.rst` as one of the `SOURCES`
+1. Run in your terminal, in the ns-3 root folder, `make -C doc/models html`
+1. Open with your browser the file `doc/models/build/html/qd-channel.html`. You should locate the `qd-channel` in the TOC, as added before
