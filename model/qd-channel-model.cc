@@ -65,11 +65,11 @@ QdChannelModel::GetTypeId (void)
     .AddConstructor<QdChannelModel> ()
     .AddAttribute ("Frequency",
                    "The operating Frequency in Hz. This attribute is here "
-                   "only for compatibility reasons.",
-                   DoubleValue (0.0),
-                   MakeDoubleAccessor (&QdChannelModel::SetFrequency,
-                                       &QdChannelModel::GetFrequency),
-                   MakeDoubleChecker<double> ());
+                   "only for compatibility with ns3::ThreeGppSpectrumPropagationLossModel.",
+                   DoubleValue (), // No setter is needed. Frequency is set resing the QD setup files.
+                   MakeDoubleAccessor (&QdChannelModel::GetFrequency),
+                   MakeDoubleChecker<double> ())
+    ;
 
   return tid;
 }
@@ -376,13 +376,6 @@ QdChannelModel::GetQdSimTime () const
 {
   NS_LOG_FUNCTION (this);
   return m_totalTimeDuration;
-}
-
-void
-QdChannelModel::SetFrequency (double freqHz)
-{
-  // m_frequency = freqHz;
-  NS_LOG_WARN ("This method has no effect, as the frequency is read from the QD configuration file");
 }
 
 double

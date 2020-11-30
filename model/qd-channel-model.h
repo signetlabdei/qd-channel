@@ -107,6 +107,9 @@ public:
 
   /**
    * Returns the center frequency
+   * NOTE: the carrier frequency is imported from the QD input
+   * files, thus not setter has been added to this class.
+   * 
    * \return the center frequency in Hz
    */
   double GetFrequency (void) const;
@@ -120,15 +123,6 @@ public:
 private:
   using RtIdToNs3IdMap_t = std::map<uint32_t, uint32_t>;
   using Ns3IdToRtIdMap_t = std::map<uint32_t, uint32_t>;
-
-  /**
-   * Sets the center frequency of the model
-   * NOTE: the carrier frequency should be imported from the input
-   * files and the method has thus been made private for this class.
-   *
-   * \param f the center frequency in Hz
-   */
-  void SetFrequency (double f);
 
   /**
    * Read paraCfgCurrent.txt file and imports necessary member variables

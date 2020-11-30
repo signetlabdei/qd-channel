@@ -88,7 +88,7 @@ This module does not provide Python bindings at the moment, they will be added i
 Attributes
 ==========
 
-TODO (Frequency? why SetFrequency?)
+* Frequency: a read-only attribute needed for compatibility with ns3::ThreeGppSpectrumPropagationLossModel
 
 Setting up a scenario
 =====================
