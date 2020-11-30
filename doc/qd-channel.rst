@@ -1,6 +1,9 @@
 QD Channel Model
 ----------------
 
+.. include:: replace.txt
+.. highlight:: cpp
+
 .. heading hierarchy:
    ------------- Chapter
    ************* Section (#.#)
