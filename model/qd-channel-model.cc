@@ -157,7 +157,7 @@ QdChannelModel::ReadNodesPosition ()
                 {
                   found = true;
                   matchedNodeId = (*nit)->GetId ();
-                  NS_LOG_DEBUG ("got a match " << pos << " ID " << matchedNodeId);
+                  NS_LOG_LOGIC ("got a match " << pos << " ID " << matchedNodeId);
                   break;
                 }
             }
@@ -172,14 +172,14 @@ QdChannelModel::ReadNodesPosition ()
       rtIdToNs3IdMap.insert (std::make_pair (id, matchedNodeId));
       m_ns3IdToRtIdMap.insert (std::make_pair (matchedNodeId, id));
 
-      NS_LOG_DEBUG ("qdId=" << id << " (" << x << "," << y << "," << z << ") matches NodeId=" << matchedNodeId);
+      NS_LOG_INFO ("qdId=" << id << " (" << x << "," << y << "," << z << ") matches NodeId=" << matchedNodeId);
 
       ++id;
     }
 
   for (auto elem : m_nodePositionList)
     {
-      NS_LOG_DEBUG (elem);
+      NS_LOG_INFO (elem);
     }
 
   return rtIdToNs3IdMap;
@@ -233,7 +233,7 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
   NS_LOG_FUNCTION (this);
 
   // QdFiles input
-  NS_LOG_DEBUG ("m_path + m_scenario = " << m_path + m_scenario);
+  NS_LOG_INFO ("m_path + m_scenario = " << m_path + m_scenario);
   auto qdFileList = GetQdFilesList (m_path + m_scenario + "Output/Ns3/QdFiles/*");
   NS_LOG_DEBUG ("qdFileList.size ()=" << qdFileList.size ());
 
@@ -254,8 +254,7 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
       NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_rx) == rtIdToNs3IdMap.end (), "ID not found for RX!");
       uint32_t nodeIdRx = rtIdToNs3IdMap.find (id_rx)->second;
 
-      NS_LOG_DEBUG (id_tx);
-      NS_LOG_DEBUG (id_rx);
+      NS_LOG_DEBUG ("id_tx: " << id_tx << ", id_rx: " << id_rx);
 
       uint32_t key = GetKey (nodeIdTx, nodeIdRx);
       // std::pair<Ptr<const MobilityModel>, Ptr<const MobilityModel>> idPair {std::make_pair(tx_mm, rx_mm)};
@@ -344,14 +343,14 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
       m_qdInfoMap.insert (std::make_pair (key, qdInfoVector));
     }
 
-  NS_LOG_DEBUG ("Imported files for " << m_qdInfoMap.size () << " tx/rx pairs");
+  NS_LOG_INFO ("Imported files for " << m_qdInfoMap.size () << " tx/rx pairs");
 }
 
 void
 QdChannelModel::ReadAllInputFiles ()
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("ReadAllInputFiles for scenario " << m_scenario << " path " << m_path);
+  NS_LOG_INFO ("ReadAllInputFiles for scenario " << m_scenario << " path " << m_path);
 
   m_ns3IdToRtIdMap.clear ();
   m_qdInfoMap.clear ();
@@ -458,12 +457,12 @@ QdChannelModel::ChannelMatrixNeedsUpdate (Ptr<const MatrixBasedChannelModel::Cha
   // if the coherence time is over the channel has to be updated
   if (lastChanUpdateTimestep < nowTimestep)
     {
-      NS_LOG_DEBUG ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update needed");
+      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update needed");
       update = true;
     }
   else
     {
-      NS_LOG_DEBUG ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update not needed");
+      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update not needed");
     }
 
   return update;
@@ -496,7 +495,7 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
   if (m_channelMap.find (channelId) != m_channelMap.end ())
     {
       // channel matrix present in the map
-      NS_LOG_DEBUG ("channel matrix present in the map");
+      NS_LOG_LOGIC ("channel matrix present in the map");
       channelMatrix = m_channelMap[channelId];
 
       // check if it has to be updated
@@ -504,7 +503,7 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
     }
   else
     {
-      NS_LOG_DEBUG ("channel matrix not found");
+      NS_LOG_LOGIC ("channel matrix not found");
       notFound = true;
     }
 
@@ -512,7 +511,7 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
   // generate a new channel
   if (notFound || update)
     {
-      NS_LOG_DEBUG ("channelMatrix notFound=" << notFound << " || update=" << update);
+      NS_LOG_LOGIC ("channelMatrix notFound=" << notFound << " || update=" << update);
       channelMatrix = GetNewChannel (aMob, bMob, aAntenna, bAntenna);
 
       // store the channel matrix in the channel map
@@ -542,15 +541,14 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
   uint64_t bSize = bAntenna->GetNumberOfElements ();
   uint64_t aSize = aAntenna->GetNumberOfElements ();
 
-  // std::cout << "timestep=" << timestep <<
-  //               ", aId=" << aId <<
-  //               ", bId=" << bId <<
-  //               ", m_ns3IdToRtIdMap[aId]=" << m_ns3IdToRtIdMap.at (aId) <<
-  //               ", m_ns3IdToRtIdMap[bId]=" << m_ns3IdToRtIdMap.at (bId) <<
-  //               ", channelId=" << channelId <<
-  //               ", bSize=" << bSize <<
-  //               ", aSize=" << aSize <<
-  //               std::endl;
+  NS_LOG_DEBUG ("timestep=" << timestep <<
+                ", aId=" << aId <<
+                ", bId=" << bId <<
+                ", m_ns3IdToRtIdMap[aId]=" << m_ns3IdToRtIdMap.at (aId) <<
+                ", m_ns3IdToRtIdMap[bId]=" << m_ns3IdToRtIdMap.at (bId) <<
+                ", channelId=" << channelId <<
+                ", bSize=" << bSize <<
+                ", aSize=" << aSize);
 
   // channel coffecient H[u][s][n];
   // considering only 1 cluster for retrocompatibility -> n=1
@@ -592,19 +590,17 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
       double pgTimesGains = pathGain * bElementGain * aElementGain;
       std::complex<double> complexRay = pgTimesGains * std::polar (1.0, initialPhase);
 
-      // std::cout << "qdInfo.delay_s[mpcIndex]=" << qdInfo.delay_s[mpcIndex] <<
-      //               ", qdInfo.phase_rad[mpcIndex]=" << qdInfo.phase_rad[mpcIndex] <<
-      //               ", qdInfo.pathGain_dbpow[mpcIndex]=" << qdInfo.pathGain_dbpow[mpcIndex] <<
-      //               ", bAngle=" << bAngle <<
-      //               ", aAngle=" << aAngle <<
-      //               std::endl;
-      // std::cout << "initialPhase=" << initialPhase <<
-      //               ", pathGain=" << pathGain <<
-      //               ", bElementGain=" << bElementGain <<
-      //               ", aElementGain=" << aElementGain <<
-      //               ", pgTimesGains=" << pgTimesGains <<
-      //               ", complexRay=" << complexRay
-      //               << std::endl;
+      NS_LOG_DEBUG ("qdInfo.delay_s[mpcIndex]=" << qdInfo.delay_s[mpcIndex] <<
+                    ", qdInfo.phase_rad[mpcIndex]=" << qdInfo.phase_rad[mpcIndex] <<
+                    ", qdInfo.pathGain_dbpow[mpcIndex]=" << qdInfo.pathGain_dbpow[mpcIndex] <<
+                    ", bAngle=" << bAngle <<
+                    ", aAngle=" << aAngle <<
+                    ", initialPhase=" << initialPhase <<
+                    ", pathGain=" << pathGain <<
+                    ", bElementGain=" << bElementGain <<
+                    ", aElementGain=" << aElementGain <<
+                    ", pgTimesGains=" << pgTimesGains <<
+                    ", complexRay=" << complexRay);
       
       for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
         {

@@ -5,8 +5,17 @@ QD Channel integration for ns-3
 This repository contains in the code for the ns-3 integration of the [QD channel model implementation from NIST and University of Padova](https://github.com/signetlabdei/qd-realization). Please refer to the repository of the QD implementation for a complete documentation on how to generate new scenarios. In this repository, we provide a first example based on a simple indoor scenario.
 
 The implementation leverages the spectrum implementation of the matrix-based channel model introduced in ns-3.31, described in [this paper](https://arxiv.org/pdf/2002.09341).
+Please cite it if you intend to use this module:
+```bibtex
+@misc{qd-realization,
+  author = {Mattia Lecci and Paolo Testolina and Michele Polese and Marco Giordani and Michele Zorzi},
+  title = {Accuracy vs. Complexity for mmWave Ray-Tracing: A Full Stack Perspective},
+  howpublished = {arXiv:2007.07125},
+}
+```
 
 References on the QD model and its usage can be found in the following papers:
+- M. Lecci, T. Zugno, S. Zampato, M. Zorzi, "A Full-Stack Open-Source Framework for Antenna and Beamforming Evaluation in mmWave 5G NR," preprint available: [arXiv:2011.05800](https://arxiv.org/abs/2011.05800)
 - M. Lecci, M. Polese, C. Lai, J. Wang, C. Gentile, N. Golmie, M. Zorzi, [Quasi-Deterministic Channel Model for mmWaves: Mathematical Formalization and Validation](https://arxiv.org/abs/2006.01235 "qd paper"), submitted to IEEE Globecom 2020;
 - C. Gentile, P. B. Papazian, R. Sun, J. Senic, and J. Wang, “Quasi- Deterministic Channel Model Parameters for a Data Center at 60 GHz,” IEEE Antennas and Wireless Propagation Letters, vol. 17, no. 5, pp. 808–812, May 2018, DOI: 10.1109/LAWP.2018.2817066;
 - C. Lai, R. Sun, C. Gentile, P. B. Papazian, J. Wang, and J. Senic, “Methodology for multipath-component tracking in millimeter-wave channel modeling,” IEEE Transactions on Antennas and Propagation, vol. 67, no. 3, pp. 1826–1836, Mar. 2019, DOI: 10.1109/TAP.2018.2888686;
