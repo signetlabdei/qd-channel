@@ -63,7 +63,7 @@ This module does not provide Python bindings at the moment, they will be added i
 
 To compile the documentation, please follow the instructions from the [ns-3 manual](https://www.nsnam.org/docs/manual/html/documentation.html).
 
-1. Istall the dcumentation-specific depdendencies as described in the [ns-3 installation guide](https://www.nsnam.org/wiki/Installation)
+1. Install the dcumentation-specific depdendencies as described in the [ns-3 installation guide](https://www.nsnam.org/wiki/Installation)
 1. You might need to fix the ImageMagick permissions for ghostscript files
 1. In `doc/models/source/index.rst`, add `qd-channel` in the TOC tree
 1. In `doc/models/Makefile`, add `../../contrib/qd-channel/doc/qd-channel.rst` as one of the `SOURCES`
