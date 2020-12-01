@@ -107,6 +107,9 @@ public:
 
   /**
    * Returns the center frequency
+   * NOTE: the carrier frequency is imported from the QD input
+   * files, thus not setter has been added to this class.
+   * 
    * \return the center frequency in Hz
    */
   double GetFrequency (void) const;
@@ -122,26 +125,18 @@ private:
   using Ns3IdToRtIdMap_t = std::map<uint32_t, uint32_t>;
 
   /**
-   * Sets the center frequency of the model
-   * NOTE: the carrier frequency should be imported from the input
-   * files and the method has thus been made private for this class.
-   *
-   * \param f the center frequency in Hz
-   */
-  void SetFrequency (double f);
-
-  /**
    * Read paraCfgCurrent.txt file and imports necessary member variables
    */
   void ReadParaCfgFile (void);
 
   /**
    * Get the channel matrix between a and b using the ray tracer data
-   * \param mobilityTx transmitter mobility model
-   * \param mobilityRx receiver mobility model
-   * \param txAntenna the tx antenna array
-   * \param rxAntenna the rx antenna array
-   * \return the channel realization
+   *
+   * \param aMob mobility model of the a device
+   * \param bMob mobility model of the b device
+   * \param aAntenna antenna of the a device
+   * \param bAntenna antenna of the b device
+   * \return the channel matrix
    */
   Ptr<const MatrixBasedChannelModel::ChannelMatrix> GetNewChannel (Ptr<const MobilityModel> aMob,
                                                                    Ptr<const MobilityModel> bMob,
@@ -196,9 +191,10 @@ private:
    * Parse numerice CSV string
    *
    * \param str CSV-formatted string
+   * \param toRad if true, convert from degrees to radians, otherwise, do nothing
    * \return vector of parsed numeric values
    */
-  std::vector<double> ParseCsv (const std::string& str);
+  std::vector<double> ParseCsv (const std::string& str, bool toRad = false);
 
   /**
    * Trim folder name in order to avoid '/' at the beginning of the file name
@@ -217,10 +213,10 @@ private:
     std::vector<double> delay_s;
     std::vector<double> pathGain_dbpow;
     std::vector<double> phase_rad;
-    std::vector<double> elAod_deg;
-    std::vector<double> azAod_deg;
-    std::vector<double> elAoa_deg;
-    std::vector<double> azAoa_deg;
+    std::vector<double> elAod_rad;
+    std::vector<double> azAod_rad;
+    std::vector<double> elAoa_rad;
+    std::vector<double> azAoa_rad;
   };
 
   std::map<uint32_t, Ptr<const MatrixBasedChannelModel::ChannelMatrix> > m_channelMap; //!< map containing the channel realizations indexed by channel key

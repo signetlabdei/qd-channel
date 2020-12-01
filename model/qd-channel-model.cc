@@ -21,7 +21,6 @@
 #include "ns3/qd-channel-model.h"
 #include "ns3/log.h"
 #include "ns3/net-device.h"
-#include "ns3/three-gpp-antenna-array-model.h"
 #include "ns3/node.h"
 #include "ns3/double.h"
 #include "ns3/string.h"
@@ -66,11 +65,11 @@ QdChannelModel::GetTypeId (void)
     .AddConstructor<QdChannelModel> ()
     .AddAttribute ("Frequency",
                    "The operating Frequency in Hz. This attribute is here "
-                   "only for compatibility reasons.",
-                   DoubleValue (0.0),
-                   MakeDoubleAccessor (&QdChannelModel::SetFrequency,
-                                       &QdChannelModel::GetFrequency),
-                   MakeDoubleChecker<double> ());
+                   "only for compatibility with ns3::ThreeGppSpectrumPropagationLossModel.",
+                   DoubleValue (), // No setter is needed. Frequency is set resing the QD setup files.
+                   MakeDoubleAccessor (&QdChannelModel::GetFrequency),
+                   MakeDoubleChecker<double> ())
+    ;
 
   return tid;
 }
@@ -92,7 +91,7 @@ QdChannelModel::GetQdFilesList (const std::string& pattern)
 }
 
 std::vector<double>
-QdChannelModel::ParseCsv (const std::string& str)
+QdChannelModel::ParseCsv (const std::string& str, bool toRad)
 {
   NS_LOG_FUNCTION (this << str);
 
@@ -101,7 +100,14 @@ QdChannelModel::ParseCsv (const std::string& str)
 
   for (double i; ss >> i;)
     {
-      vect.push_back (i);
+      if (toRad)
+      {
+        vect.push_back (DegreesToRadians (i));
+      }
+      else
+      {
+        vect.push_back (i);
+      }
       if (ss.peek () == ',')
         {
           ss.ignore ();
@@ -134,6 +140,8 @@ QdChannelModel::ReadNodesPosition ()
       std::getline (ss, pos, ',');
       double z = ::atof (pos.c_str ());
       Vector3D nodePosition {x,y,z};
+
+      NS_LOG_DEBUG ("Trying to match position from file: (" << x << ", " << y << ", " << z << ")");
       m_nodePositionList.push_back (nodePosition);
       bool found {false};
       uint32_t matchedNodeId;
@@ -144,6 +152,7 @@ QdChannelModel::ReadNodesPosition ()
             {
               // TODO automatically import nodes' initial positions to avoid manual setting every time the scenario changes
               Vector3D pos = mm->GetPosition ();
+              NS_LOG_DEBUG ("Checking node with position: (" << pos.x << ", " << pos.y << ", " << pos.z << ")");
               if (x == pos.x && y == pos.y && z == pos.z)
                 {
                   found = true;
@@ -153,17 +162,24 @@ QdChannelModel::ReadNodesPosition ()
                 }
             }
         }
+      if (!found)
+      {
+        NS_LOG_ERROR ("Position not found: (" << x << ", " << y << ", " << z << ")");
+      }
+
       NS_ABORT_MSG_IF (!found, "Position not matched - did you install the mobility model before the channel is created");
 
       rtIdToNs3IdMap.insert (std::make_pair (id, matchedNodeId));
       m_ns3IdToRtIdMap.insert (std::make_pair (matchedNodeId, id));
+
+      NS_LOG_INFO ("qdId=" << id << " (" << x << "," << y << "," << z << ") matches NodeId=" << matchedNodeId);
 
       ++id;
     }
 
   for (auto elem : m_nodePositionList)
     {
-      NS_LOG_LOGIC (elem);
+      NS_LOG_INFO (elem);
     }
 
   return rtIdToNs3IdMap;
@@ -217,7 +233,7 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
   NS_LOG_FUNCTION (this);
 
   // QdFiles input
-  NS_LOG_DEBUG ("m_path + m_scenario = " << m_path + m_scenario);
+  NS_LOG_INFO ("m_path + m_scenario = " << m_path + m_scenario);
   auto qdFileList = GetQdFilesList (m_path + m_scenario + "Output/Ns3/QdFiles/*");
   NS_LOG_DEBUG ("qdFileList.size ()=" << qdFileList.size ());
 
@@ -238,8 +254,7 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
       NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_rx) == rtIdToNs3IdMap.end (), "ID not found for RX!");
       uint32_t nodeIdRx = rtIdToNs3IdMap.find (id_rx)->second;
 
-      NS_LOG_LOGIC (id_tx);
-      NS_LOG_LOGIC (id_rx);
+      NS_LOG_DEBUG ("id_tx: " << id_tx << ", id_rx: " << id_rx);
 
       uint32_t key = GetKey (nodeIdTx, nodeIdRx);
       // std::pair<Ptr<const MobilityModel>, Ptr<const MobilityModel>> idPair {std::make_pair(tx_mm, rx_mm)};
@@ -254,7 +269,7 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
           QdInfo qdInfo {};
           // the file has a line with the number of multipath components
           qdInfo.numMpcs = std::stoul (line, 0, 10);
-          NS_LOG_LOGIC ("numMpcs " << qdInfo.numMpcs);
+          NS_LOG_DEBUG ("numMpcs " << qdInfo.numMpcs);
 
           if (qdInfo.numMpcs > 0)
             {
@@ -287,40 +302,40 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
               qdInfo.phase_rad = pathPhases;
               // a line with the elev AoD
               std::getline (qdFile, line);
-              auto pathElevAod = ParseCsv (line);
+              auto pathElevAod = ParseCsv (line, true);
               NS_ABORT_MSG_IF (pathElevAod.size () != qdInfo.numMpcs,
                                "mismatch between number of path elev AoDs (" << pathElevAod.size () <<
                                ") and number of MPCs (" << qdInfo.numMpcs <<
                                "), timestep=" << qdInfoVector.size () + 1 <<
                                ", fileName=" << fileName);
-              qdInfo.elAod_deg = pathElevAod;
+              qdInfo.elAod_rad = pathElevAod;
               // a line with the azimuth AoD
               std::getline (qdFile, line);
-              auto pathAzAod = ParseCsv (line);
+              auto pathAzAod = ParseCsv (line, true);
               NS_ABORT_MSG_IF (pathAzAod.size () != qdInfo.numMpcs,
                                "mismatch between number of path az AoDs (" << pathAzAod.size () <<
                                ") and number of MPCs (" << qdInfo.numMpcs <<
                                "), timestep=" << qdInfoVector.size () + 1 <<
                                ", fileName=" << fileName);
-              qdInfo.azAod_deg = pathAzAod;
+              qdInfo.azAod_rad = pathAzAod;
               // a line with the elev AoA
               std::getline (qdFile, line);
-              auto pathElevAoa = ParseCsv (line);
+              auto pathElevAoa = ParseCsv (line, true);
               NS_ABORT_MSG_IF (pathElevAoa.size () != qdInfo.numMpcs,
                                "mismatch between number of path elev AoAs (" << pathElevAoa.size () <<
                                ") and number of MPCs (" << qdInfo.numMpcs <<
                                "), timestep=" << qdInfoVector.size () + 1 <<
                                ", fileName=" << fileName);
-              qdInfo.elAoa_deg = pathElevAoa;
+              qdInfo.elAoa_rad = pathElevAoa;
               // a line with the azimuth AoA
               std::getline (qdFile, line);
-              auto pathAzAoa = ParseCsv (line);
+              auto pathAzAoa = ParseCsv (line, true);
               NS_ABORT_MSG_IF (pathAzAoa.size () != qdInfo.numMpcs,
                                "mismatch between number of path az AoAs (" << pathAzAoa.size () <<
                                ") and number of MPCs (" << qdInfo.numMpcs <<
                                "), timestep=" << qdInfoVector.size () + 1 <<
                                ", fileName=" << fileName);
-              qdInfo.azAoa_deg = pathAzAoa;
+              qdInfo.azAoa_rad = pathAzAoa;
             }
           qdInfoVector.push_back (qdInfo);
         }
@@ -328,14 +343,14 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
       m_qdInfoMap.insert (std::make_pair (key, qdInfoVector));
     }
 
-  NS_LOG_DEBUG ("Imported files for " << m_qdInfoMap.size () << " tx/rx pairs");
+  NS_LOG_INFO ("Imported files for " << m_qdInfoMap.size () << " tx/rx pairs");
 }
 
 void
 QdChannelModel::ReadAllInputFiles ()
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_LOGIC ("ReadAllInputFiles for scenario " << m_scenario << " path " << m_path);
+  NS_LOG_INFO ("ReadAllInputFiles for scenario " << m_scenario << " path " << m_path);
 
   m_ns3IdToRtIdMap.clear ();
   m_qdInfoMap.clear ();
@@ -362,13 +377,6 @@ QdChannelModel::GetQdSimTime () const
   return m_totalTimeDuration;
 }
 
-void
-QdChannelModel::SetFrequency (double freqHz)
-{
-  // m_frequency = freqHz;
-  NS_LOG_WARN ("This method has no effect, as the frequency is read from the QD configuration file");
-}
-
 double
 QdChannelModel::GetFrequency () const
 {
@@ -380,7 +388,8 @@ void
 QdChannelModel::TrimFolderName (std::string& folder)
 {
   // avoid starting with multiple '/'
-  while (folder.front () == '/')
+  while (folder.front () == '/' &&
+         folder.substr (1, folder.size ()).front () == '/')
     {
       folder = folder.substr (1, folder.size ());
     }
@@ -448,12 +457,12 @@ QdChannelModel::ChannelMatrixNeedsUpdate (Ptr<const MatrixBasedChannelModel::Cha
   // if the coherence time is over the channel has to be updated
   if (lastChanUpdateTimestep < nowTimestep)
     {
-      NS_LOG_DEBUG ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update needed");
+      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update needed");
       update = true;
     }
   else
     {
-      NS_LOG_DEBUG ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update not needed");
+      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update not needed");
     }
 
   return update;
@@ -486,7 +495,7 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
   if (m_channelMap.find (channelId) != m_channelMap.end ())
     {
       // channel matrix present in the map
-      NS_LOG_DEBUG ("channel matrix present in the map");
+      NS_LOG_LOGIC ("channel matrix present in the map");
       channelMatrix = m_channelMap[channelId];
 
       // check if it has to be updated
@@ -494,7 +503,7 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
     }
   else
     {
-      NS_LOG_DEBUG ("channel matrix not found");
+      NS_LOG_LOGIC ("channel matrix not found");
       notFound = true;
     }
 
@@ -529,26 +538,35 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
 
   QdInfo qdInfo = m_qdInfoMap.at (channelId)[timestep];
 
-  uint64_t uSize = bAntenna->GetNumberOfElements ();
-  uint64_t sSize = aAntenna->GetNumberOfElements ();
+  uint64_t bSize = bAntenna->GetNumberOfElements ();
+  uint64_t aSize = aAntenna->GetNumberOfElements ();
+
+  NS_LOG_DEBUG ("timestep=" << timestep <<
+                ", aId=" << aId <<
+                ", bId=" << bId <<
+                ", m_ns3IdToRtIdMap[aId]=" << m_ns3IdToRtIdMap.at (aId) <<
+                ", m_ns3IdToRtIdMap[bId]=" << m_ns3IdToRtIdMap.at (bId) <<
+                ", channelId=" << channelId <<
+                ", bSize=" << bSize <<
+                ", aSize=" << aSize);
 
   // channel coffecient H[u][s][n];
   // considering only 1 cluster for retrocompatibility -> n=1
   MatrixBasedChannelModel::Complex3DVector H;
 
-  H.resize (uSize);
-  for (uint64_t uIndex = 0; uIndex < uSize; uIndex++)
+  H.resize (bSize);
+  for (uint64_t bIndex = 0; bIndex < bSize; bIndex++)
     {
-      H[uIndex].resize (sSize);
-      for (uint64_t sIndex = 0; sIndex < sSize; sIndex++)
+      H[bIndex].resize (aSize);
+      for (uint64_t aIndex = 0; aIndex < aSize; aIndex++)
         {
           if (qdInfo.numMpcs > 0)
             {
-              H[uIndex][sIndex].resize (1, std::complex<double> (0,0));
+              H[bIndex][aIndex].resize (1, std::complex<double> (0,0));
             }
           else
             {
-              H[uIndex][sIndex].resize (0, std::complex<double> (0,0));
+              H[bIndex][aIndex].resize (0, std::complex<double> (0,0));
             }
         }
     }
@@ -557,27 +575,52 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
     {
       double initialPhase = -2 * M_PI * qdInfo.delay_s[mpcIndex] * m_frequency + qdInfo.phase_rad[mpcIndex];
       double pathGain = pow (10, qdInfo.pathGain_dbpow[mpcIndex] / 20);
-      // double rxElementGain = bAntenna->GetRadiationPattern (qdInfo.elAoa_deg[mpcIndex], qdInfo.azAoa_deg[mpcIndex]);
-      // double txElementGain = aAntenna->GetRadiationPattern (qdInfo.elAod_deg[mpcIndex], qdInfo.azAod_deg[mpcIndex]);
-      double pgTimesGains = pathGain; // pathGain * rxElementGain * txElementGain;
-      for (uint64_t uIndex = 0; uIndex < uSize; ++uIndex)
+      
+      Angles bAngle = Angles (qdInfo.azAoa_rad[mpcIndex], qdInfo.elAoa_rad[mpcIndex]);
+      Angles aAngle = Angles (qdInfo.azAod_rad[mpcIndex], qdInfo.elAod_rad[mpcIndex]);
+      NS_LOG_DEBUG ("aAngle: " << aAngle << ", bAngle: " << bAngle);
+      
+      // ignore polarization
+      double bFieldPattH, bFieldPattV, aFieldPattH, aFieldPattV;
+      std::tie (bFieldPattH, bFieldPattV) = bAntenna->GetElementFieldPattern (bAngle);
+      double bElementGain = std::sqrt (bFieldPattH * bFieldPattH + bFieldPattV * bFieldPattV);
+      std::tie (aFieldPattH, aFieldPattV) = aAntenna->GetElementFieldPattern (aAngle);
+      double aElementGain = std::sqrt (aFieldPattH * aFieldPattH + aFieldPattV * aFieldPattV);
+      
+      double pgTimesGains = pathGain * bElementGain * aElementGain;
+      std::complex<double> complexRay = pgTimesGains * std::polar (1.0, initialPhase);
+
+      NS_LOG_DEBUG ("qdInfo.delay_s[mpcIndex]=" << qdInfo.delay_s[mpcIndex] <<
+                    ", qdInfo.phase_rad[mpcIndex]=" << qdInfo.phase_rad[mpcIndex] <<
+                    ", qdInfo.pathGain_dbpow[mpcIndex]=" << qdInfo.pathGain_dbpow[mpcIndex] <<
+                    ", bAngle=" << bAngle <<
+                    ", aAngle=" << aAngle <<
+                    ", initialPhase=" << initialPhase <<
+                    ", pathGain=" << pathGain <<
+                    ", bElementGain=" << bElementGain <<
+                    ", aElementGain=" << aElementGain <<
+                    ", pgTimesGains=" << pgTimesGains <<
+                    ", complexRay=" << complexRay);
+      
+      for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
         {
-          Vector uLoc = bAntenna->GetElementLocation (uIndex);
-          double rxPhaseDiff = 2 * M_PI * (sin (qdInfo.elAoa_deg[mpcIndex] / 180 * M_PI) * cos (qdInfo.azAoa_deg[mpcIndex] / 180 * M_PI) * uLoc.x
-                                           + sin (qdInfo.elAoa_deg[mpcIndex] / 180 * M_PI) * sin (qdInfo.azAoa_deg[mpcIndex] / 180 * M_PI) * uLoc.y
-                                           + cos (qdInfo.elAoa_deg[mpcIndex] / 180 * M_PI) * uLoc.z);
+          Vector uLoc = bAntenna->GetElementLocation (bIndex);
+          double bPhaseElementPhase = 2 * M_PI * (sin (qdInfo.elAoa_rad[mpcIndex]) * cos (qdInfo.azAoa_rad[mpcIndex]) * uLoc.x
+                                           + sin (qdInfo.elAoa_rad[mpcIndex]) * sin (qdInfo.azAoa_rad[mpcIndex]) * uLoc.y
+                                           + cos (qdInfo.elAoa_rad[mpcIndex]) * uLoc.z);
+          std::complex<double> bWeight = std::polar (1.0, bPhaseElementPhase);
 
-          for (uint64_t sIndex = 0; sIndex < sSize; ++sIndex)
+          for (uint64_t aIndex = 0; aIndex < aSize; ++aIndex)
             {
-              Vector sLoc = aAntenna->GetElementLocation (sIndex);
+              Vector sLoc = aAntenna->GetElementLocation (aIndex);
               // minus sign: complex conjugate for TX steering vector
-              double txPhaseDiff = 2 * M_PI * (sin (qdInfo.elAod_deg[mpcIndex] / 180 * M_PI) * cos (qdInfo.azAod_deg[mpcIndex] / 180 * M_PI) * sLoc.x
-                                               + sin (qdInfo.elAod_deg[mpcIndex] / 180 * M_PI) * sin (qdInfo.azAod_deg[mpcIndex] / 180 * M_PI) * sLoc.y
-                                               + cos (qdInfo.elAod_deg[mpcIndex] / 180 * M_PI) * sLoc.z);
+              double aPhaseElementPhase = 2 * M_PI * (sin (qdInfo.elAod_rad[mpcIndex]) * cos (qdInfo.azAod_rad[mpcIndex]) * sLoc.x
+                                               + sin (qdInfo.elAod_rad[mpcIndex]) * sin (qdInfo.azAod_rad[mpcIndex]) * sLoc.y
+                                               + cos (qdInfo.elAod_rad[mpcIndex]) * sLoc.z);
+              std::complex<double> aWeight = std::polar (1.0, aPhaseElementPhase);
 
-              std::complex<double> ray =  pgTimesGains * exp (std::complex<double> (0, initialPhase + rxPhaseDiff + txPhaseDiff));
-
-              H[uIndex][sIndex][0] += ray;
+              std::complex<double> ray =  complexRay * bWeight * aWeight;
+              H[bIndex][aIndex][0] += ray;
             }
         }
     }
@@ -586,13 +629,23 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
   channelParams->m_delay = qdInfo.delay_s;
 
   channelParams->m_angle.clear ();
-  channelParams->m_angle.push_back (qdInfo.azAoa_deg);
-  channelParams->m_angle.push_back (qdInfo.elAoa_deg);
-  channelParams->m_angle.push_back (qdInfo.azAod_deg);
-  channelParams->m_angle.push_back (qdInfo.elAod_deg);
+  channelParams->m_angle.push_back (qdInfo.azAoa_rad);
+  channelParams->m_angle.push_back (qdInfo.elAoa_rad);
+  channelParams->m_angle.push_back (qdInfo.azAod_rad);
+  channelParams->m_angle.push_back (qdInfo.elAod_rad);
 
   channelParams->m_generatedTime = Simulator::Now ();
   channelParams->m_nodeIds = std::make_pair (aId, bId);
+
+  // std::cout << "H matrix at timestep " << +timestep << std::endl;
+  // for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
+  //     {
+  //       for (uint64_t aIndex = 0; aIndex < aSize; ++aIndex)
+  //         {
+  //          std::cout << std::showpos << std::real (H[bIndex][aIndex][0]) << std::imag (H[bIndex][aIndex][0]) << "j,";
+  //         }
+  //       std::cout << ";..." << std::endl;
+  //     }
 
   return channelParams;
 }
@@ -611,7 +664,7 @@ QdChannelModel::GetTimestep (Time t) const
   NS_ASSERT_MSG (m_updatePeriod.GetNanoSeconds () > 0.0, "QdChannelModel update period not set correctly");
 
   uint64_t timestep = t.GetNanoSeconds () / m_updatePeriod.GetNanoSeconds ();
-  NS_LOG_LOGIC ("t = " << t.GetNanoSeconds () << " ns" <<
+  NS_LOG_DEBUG ("t = " << t.GetNanoSeconds () << " ns" <<
                 ", updatePeriod = " << m_updatePeriod.GetNanoSeconds () << " ns" <<
                 ", timestep = " << timestep);
 
