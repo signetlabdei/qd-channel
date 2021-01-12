@@ -34,6 +34,7 @@
 #include <fstream>
 #include <sstream>
 #include <ns3/node-list.h>
+#include "ns3/csv-reader.h"
 
 
 namespace ns3 {
@@ -96,22 +97,25 @@ QdChannelModel::ParseCsv (const std::string& str, bool toRad)
   NS_LOG_FUNCTION (this << str);
 
   std::stringstream ss (str);
-  std::vector<double> vect{};
+  CsvReader csv (ss, ',');
+  csv.FetchNextRow ();
 
-  for (double i; ss >> i;)
+  std::vector<double> vect{};
+  vect.reserve (csv.ColumnCount ());
+
+  double value;
+  bool ok;
+  for (size_t i = 0; i < csv.ColumnCount (); i++)
     {
+      ok = csv.GetValue (i, value);
+      NS_ABORT_MSG_IF (!ok, "Something went wrong while parsing the line: " << str);
+
       if (toRad)
-      {
-        vect.push_back (DegreesToRadians (i));
-      }
-      else
-      {
-        vect.push_back (i);
-      }
-      if (ss.peek () == ',')
         {
-          ss.ignore ();
+          value = DegreesToRadians (value);
         }
+
+      vect.push_back (value);
     }
 
   return vect;
@@ -123,25 +127,29 @@ QdChannelModel::ReadNodesPosition ()
   NS_LOG_FUNCTION (this);
 
   std::string posFileName {m_path + m_scenario + "Output/Ns3/NodesPosition/NodesPosition.csv"};
-  std::ifstream posFile {posFileName.c_str ()};
-  NS_ABORT_MSG_IF (!posFile.good (), posFileName + " not found");
 
-  std::string line{};
   uint32_t id {0};
   QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap;
-  while (std::getline (posFile, line))
-    {
-      std::istringstream ss{line};
-      std::string pos;
-      std::getline (ss, pos, ',');
-      double x = ::atof (pos.c_str ());
-      std::getline (ss, pos, ',');
-      double y = ::atof (pos.c_str ());
-      std::getline (ss, pos, ',');
-      double z = ::atof (pos.c_str ());
-      Vector3D nodePosition {x,y,z};
 
-      NS_LOG_DEBUG ("Trying to match position from file: (" << x << ", " << y << ", " << z << ")");
+  CsvReader csv (posFileName, ',');
+  while (csv.FetchNextRow ())
+    {
+      // Ignore blank lines
+      if (csv.IsBlankRow ())
+        {
+          continue;
+        }
+
+      // Expecting cartesian coordinates
+      double x, y, z;
+      bool ok = csv.GetValue (0, x);
+      ok |= csv.GetValue (1, y);
+      ok |= csv.GetValue (2, z);
+
+      NS_ABORT_MSG_IF (!ok, "Something went wrong while parsing the file: " << posFileName);
+      Vector3D nodePosition {x, y, z};
+
+      NS_LOG_DEBUG ("Trying to match position from file: " << nodePosition);
       m_nodePositionList.push_back (nodePosition);
       bool found {false};
       uint32_t matchedNodeId;
@@ -152,8 +160,8 @@ QdChannelModel::ReadNodesPosition ()
             {
               // TODO automatically import nodes' initial positions to avoid manual setting every time the scenario changes
               Vector3D pos = mm->GetPosition ();
-              NS_LOG_DEBUG ("Checking node with position: (" << pos.x << ", " << pos.y << ", " << pos.z << ")");
-              if (x == pos.x && y == pos.y && z == pos.z)
+              NS_LOG_DEBUG ("Checking node with position: " << pos);
+              if (nodePosition == pos)
                 {
                   found = true;
                   matchedNodeId = (*nit)->GetId ();
@@ -163,19 +171,20 @@ QdChannelModel::ReadNodesPosition ()
             }
         }
       if (!found)
-      {
-        NS_LOG_ERROR ("Position not found: (" << x << ", " << y << ", " << z << ")");
-      }
+        {
+          NS_LOG_ERROR ("Position not found: " << nodePosition);
+        }
 
       NS_ABORT_MSG_IF (!found, "Position not matched - did you install the mobility model before the channel is created");
 
       rtIdToNs3IdMap.insert (std::make_pair (id, matchedNodeId));
       m_ns3IdToRtIdMap.insert (std::make_pair (matchedNodeId, id));
 
-      NS_LOG_INFO ("qdId=" << id << " (" << x << "," << y << "," << z << ") matches NodeId=" << matchedNodeId);
+      NS_LOG_INFO ("qdId=" << id  << " matches NodeId=" << matchedNodeId << " with position=" << nodePosition);
 
       ++id;
-    }
+
+    }  // while FetchNextRow
 
   for (auto elem : m_nodePositionList)
     {
@@ -191,21 +200,22 @@ QdChannelModel::ReadParaCfgFile ()
   NS_LOG_FUNCTION (this);
 
   std::string paraCfgCurrentFileName {m_path + m_scenario + "Input/paraCfgCurrent.txt"};
-  std::ifstream paraCfgCurrentFile {paraCfgCurrentFileName.c_str ()};
-  NS_ABORT_MSG_IF (!paraCfgCurrentFile.good (), paraCfgCurrentFileName + " not found");
+  CsvReader csv (paraCfgCurrentFileName, '\t');
+  csv.FetchNextRow (); // ignore first line (header)
 
-  char delimiter = '\t';
-  std::string line{};
   std::string varName, varValue;
-
-  // ignore first line
-  std::getline (paraCfgCurrentFile, line);
-  // input following lines
-  while (std::getline (paraCfgCurrentFile, line))
+  while (csv.FetchNextRow ())
     {
-      std::istringstream tokenStream (line);
-      std::getline (tokenStream, varName, delimiter);
-      std::getline (tokenStream, varValue, delimiter);
+      // Ignore blank lines
+      if (csv.IsBlankRow ())
+        {
+          continue;
+        }
+
+      // Expecting three values
+      bool ok = csv.GetValue (0, varName);
+      ok |= csv.GetValue (1, varValue);
+      NS_ABORT_MSG_IF (!ok, "Something went wrong while parsing the file: " << paraCfgCurrentFileName);
 
       if (varName.compare ("numberOfTimeDivisions") == 0)
         {
@@ -223,7 +233,7 @@ QdChannelModel::ReadParaCfgFile ()
           NS_LOG_DEBUG ("carrierFrequency (float) = " << m_frequency);
         }
 
-    }
+    } // while FetchNextRow
 
 }
 
