@@ -31,7 +31,7 @@
 
 namespace ns3 {
 
-class ThreeGppAntennaArrayModel;
+class PhasedArrayModel;
 class MobilityModel;
 
 /**
@@ -72,8 +72,8 @@ public:
    */
   Ptr<const MatrixBasedChannelModel::ChannelMatrix> GetChannel (Ptr<const MobilityModel> aMob,
                                                                 Ptr<const MobilityModel> bMob,
-                                                                Ptr<const ThreeGppAntennaArrayModel> aAntenna,
-                                                                Ptr<const ThreeGppAntennaArrayModel> bAntenna) override;
+                                                                Ptr<const PhasedArrayModel> aAntenna,
+                                                                Ptr<const PhasedArrayModel> bAntenna) override;
 
   /*
    * Set the folder path containing the scenario of interest
@@ -140,8 +140,8 @@ private:
    */
   Ptr<const MatrixBasedChannelModel::ChannelMatrix> GetNewChannel (Ptr<const MobilityModel> aMob,
                                                                    Ptr<const MobilityModel> bMob,
-                                                                   Ptr<const ThreeGppAntennaArrayModel> aAntenna,
-                                                                   Ptr<const ThreeGppAntennaArrayModel> bAntenna) const;
+                                                                   Ptr<const PhasedArrayModel> aAntenna,
+                                                                   Ptr<const PhasedArrayModel> bAntenna) const;
 
   /**
    * Check if the channel matrix has to be updated

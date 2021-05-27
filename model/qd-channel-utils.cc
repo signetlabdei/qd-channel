@@ -23,17 +23,17 @@
 
 #include "ns3/core-module.h"
 #include "ns3/qd-channel-model.h"
-#include "ns3/three-gpp-antenna-array-model.h"
+#include "ns3/phased-array-model.h"
 #include "ns3/qd-channel-utils.h"
 
 NS_LOG_COMPONENT_DEFINE ("QdChannelUtils");
 
 namespace ns3 {
 
-ThreeGppAntennaArrayModel::ComplexVector
+PhasedArrayModel::ComplexVector
 GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter, double threshold)
 {
-  ThreeGppAntennaArrayModel::ComplexVector antennaWeights;
+  PhasedArrayModel::ComplexVector antennaWeights;
   uint16_t arraySize = A.size ();
   for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
     {
@@ -44,7 +44,7 @@ GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter,
   double diff = 1;
   while (iter < nIter && diff > threshold)
     {
-      ThreeGppAntennaArrayModel::ComplexVector antennaWeightsNew;
+      PhasedArrayModel::ComplexVector antennaWeightsNew;
 
       for (uint16_t row = 0; row < arraySize; row++)
         {
@@ -79,7 +79,7 @@ GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter,
   return antennaWeights;
 }
 
-std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector>
+std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector>
 ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params)
 {
   // params
@@ -138,7 +138,7 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
     }
 
   // Calculate beamforming vector from spatial correlation matrix
-  ThreeGppAntennaArrayModel::ComplexVector bW = GetFirstEigenvector (bQ, svdIter, svdThresh);
+  PhasedArrayModel::ComplexVector bW = GetFirstEigenvector (bQ, svdIter, svdThresh);
 
   // Compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over n clusters.
   MatrixBasedChannelModel::Complex2DVector aQ;
@@ -164,7 +164,7 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
     }
 
   // Calculate beamforming vector from spatial correlation matrix.
-  ThreeGppAntennaArrayModel::ComplexVector aW = GetFirstEigenvector (aQ, svdIter, svdThresh);
+  PhasedArrayModel::ComplexVector aW = GetFirstEigenvector (aQ, svdIter, svdThresh);
 
   for (size_t i = 0; i < aW.size (); ++i)
     {
