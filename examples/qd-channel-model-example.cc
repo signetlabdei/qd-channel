@@ -35,7 +35,7 @@
 #include "ns3/lte-spectrum-value-helper.h"
 #include "ns3/qd-channel-utils.h"
 
-NS_LOG_COMPONENT_DEFINE ("ThreeGppChannelExample");
+NS_LOG_COMPONENT_DEFINE ("QdChannelModelExample");
 
 using namespace ns3;
 
@@ -65,15 +65,14 @@ static void DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayMode
  */
 static void ComputeSnr ();
 
-
 int
 main (int argc, char *argv[])
 {
   std::string qdFilesPath = "contrib/qd-channel/model/QD/"; // The path of the folder with the QD scenarios
   std::string scenario = "Indoor1"; // The name of the scenario
-  
-  RngSeedManager::SetSeed(1);
-  RngSeedManager::SetRun(1);
+
+  RngSeedManager::SetSeed (1);
+  RngSeedManager::SetRun (1);
 
   // Create the tx and rx nodes
   NodeContainer nodes;
@@ -105,7 +104,7 @@ main (int argc, char *argv[])
   // Create the QdChannelModel
   qdChannel = CreateObject<QdChannelModel> (qdFilesPath, scenario);
   Time simTime = qdChannel->GetQdSimTime ();
-  
+
   // Create the spectrum propagation loss model
   spectrumLossModel = CreateObjectWithAttributes<ThreeGppSpectrumPropagationLossModel> ("ChannelModel", PointerValue (qdChannel));
 
@@ -113,12 +112,12 @@ main (int argc, char *argv[])
   txAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2),
                                                                      "NumRows", UintegerValue (2),
                                                                      "IsotropicElements", BooleanValue (true));
-  txNode->AggregateObject(txAntenna);
+  txNode->AggregateObject (txAntenna);
 
   rxAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2),
                                                                      "NumRows", UintegerValue (2),
                                                                      "IsotropicElements", BooleanValue (true));
-  rxNode->AggregateObject(rxAntenna);
+  rxNode->AggregateObject (rxAntenna);
 
   // Initialize the devices in the ThreeGppSpectrumPropagationLossModel
   spectrumLossModel->AddDevice (txDev, txAntenna);
@@ -126,13 +125,12 @@ main (int argc, char *argv[])
 
   // Compute and print SNR
   Simulator::ScheduleNow (&ComputeSnr);
-  
+
   Simulator::Stop (simTime);
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 }
-
 
 /*  UTILITIES */
 static void
@@ -140,7 +138,8 @@ DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayModel> txAntenna
 {
   Ptr<MobilityModel> thisMob = txDevice->GetNode ()->GetObject<MobilityModel> ();
   Ptr<MobilityModel> otherMob = rxDevice->GetNode ()->GetObject<MobilityModel> ();
-  Ptr<const MatrixBasedChannelModel::ChannelMatrix> channelMatrix = qdChannel->GetChannel (thisMob, otherMob, txAntenna, rxAntenna);
+  Ptr<const MatrixBasedChannelModel::ChannelMatrix> channelMatrix =
+      qdChannel->GetChannel (thisMob, otherMob, txAntenna, rxAntenna);
 
   auto bfVectors = ComputeSvdBeamformingVectors (channelMatrix);
 
@@ -149,7 +148,6 @@ DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayModel> txAntenna
   rxAntenna->SetBeamformingVector (std::get<1> (bfVectors));
 }
 
-
 static void
 ComputeSnr ()
 {
@@ -157,17 +155,19 @@ ComputeSnr ()
   // 100 RBs corresponds to 18 MHz (1 RB = 180 kHz)
   // EARFCN 100 corresponds to 2125.00 MHz
   std::vector<int> activeRbs0 (100);
-  for (int i = 0; i < 100 ; i++)
-  {
-    activeRbs0[i] = i;
-  }
-  Ptr<SpectrumValue> txPsd = LteSpectrumValueHelper::CreateTxPowerSpectralDensity (2100, 100, txPow, activeRbs0);
+  for (int i = 0; i < 100; i++)
+    {
+      activeRbs0[i] = i;
+    }
+  Ptr<SpectrumValue> txPsd =
+      LteSpectrumValueHelper::CreateTxPowerSpectralDensity (2100, 100, txPow, activeRbs0);
   Ptr<SpectrumValue> rxPsd = txPsd->Copy ();
-  NS_LOG_DEBUG ("Average tx power " << 10*log10(Sum (*txPsd) * 180e3) << " dB");
+  NS_LOG_DEBUG ("Average tx power " << 10 * log10 (Sum (*txPsd) * 180e3) << " dB");
 
   // Create the noise PSD
-  Ptr<SpectrumValue> noisePsd = LteSpectrumValueHelper::CreateNoisePowerSpectralDensity (2100, 100, noiseFigure);
-  NS_LOG_DEBUG ("Average noise power " << 10*log10 (Sum (*noisePsd) * 180e3) << " dB");
+  Ptr<SpectrumValue> noisePsd =
+      LteSpectrumValueHelper::CreateNoisePowerSpectralDensity (2100, 100, noiseFigure);
+  NS_LOG_DEBUG ("Average noise power " << 10 * log10 (Sum (*noisePsd) * 180e3) << " dB");
 
   // compute beamforming vectors
   Ptr<NetDevice> txDevice = txMob->GetObject<Node> ()->GetDevice (0);
@@ -177,7 +177,7 @@ ComputeSnr ()
 
   // Apply the fast fading and the beamforming gain
   rxPsd = spectrumLossModel->CalcRxPowerSpectralDensity (rxPsd, txMob, rxMob);
-  NS_LOG_DEBUG ("Average rx power " << 10*log10 (Sum (*rxPsd) * 180e3) << " dB");
+  NS_LOG_DEBUG ("Average rx power " << 10 * log10 (Sum (*rxPsd) * 180e3) << " dB");
 
   // Compute the SNR
   NS_LOG_DEBUG ("Average SNR " << 10 * log10 (Sum (*rxPsd) / Sum (*noisePsd)) << " dB");

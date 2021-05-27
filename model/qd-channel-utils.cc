@@ -21,13 +21,12 @@
  * This file contains some utility functions needed by the example script(s)
  */
 
-
 #include "ns3/core-module.h"
 #include "ns3/qd-channel-model.h"
 #include "ns3/three-gpp-antenna-array-model.h"
 #include "ns3/qd-channel-utils.h"
 
-NS_LOG_COMPONENT_DEFINE ("ThreeGppChannelExampleUtils");
+NS_LOG_COMPONENT_DEFINE ("QdChannelUtils");
 
 namespace ns3 {
 
@@ -49,7 +48,7 @@ GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter,
 
       for (uint16_t row = 0; row < arraySize; row++)
         {
-          std::complex<double> sum (0,0);
+          std::complex<double> sum (0, 0);
           for (uint16_t col = 0; col < arraySize; col++)
             {
               sum += A[row][col] * antennaWeights[col];
@@ -79,7 +78,6 @@ GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter,
 
   return antennaWeights;
 }
-
 
 std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector>
 ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params)
@@ -129,10 +127,11 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
     {
       for (uint16_t b2Index = 0; b2Index < bSize; b2Index++)
         {
-          std::complex<double> aSum (0,0);
+          std::complex<double> aSum (0, 0);
           for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
             {
-              aSum += std::conj (narrowbandChannel[aIndex][b1Index]) * narrowbandChannel[aIndex][b2Index];
+              aSum += std::conj (narrowbandChannel[aIndex][b1Index]) *
+                      narrowbandChannel[aIndex][b2Index];
             }
           bQ[b1Index][b2Index] += aSum;
         }
@@ -154,10 +153,11 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
     {
       for (uint16_t a2Index = 0; a2Index < aSize; a2Index++)
         {
-          std::complex<double> bSum (0,0);
+          std::complex<double> bSum (0, 0);
           for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
             {
-              bSum += narrowbandChannel[a1Index][bIndex] * std::conj (narrowbandChannel[a2Index][bIndex]);
+              bSum += narrowbandChannel[a1Index][bIndex] *
+                      std::conj (narrowbandChannel[a2Index][bIndex]);
             }
           aQ[a1Index][a2Index] += bSum;
         }

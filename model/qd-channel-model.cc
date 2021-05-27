@@ -36,13 +36,11 @@
 #include <ns3/node-list.h>
 #include "ns3/csv-reader.h"
 
-
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("QdChannelModel");
 
 NS_OBJECT_ENSURE_REGISTERED (QdChannelModel);
-
 
 QdChannelModel::QdChannelModel (std::string path, std::string scenario)
 {
@@ -76,7 +74,7 @@ QdChannelModel::GetTypeId (void)
 }
 
 std::vector<std::string>
-QdChannelModel::GetQdFilesList (const std::string& pattern)
+QdChannelModel::GetQdFilesList (const std::string &pattern)
 {
   NS_LOG_FUNCTION (this << pattern);
 
@@ -92,7 +90,7 @@ QdChannelModel::GetQdFilesList (const std::string& pattern)
 }
 
 std::vector<double>
-QdChannelModel::ParseCsv (const std::string& str, bool toRad)
+QdChannelModel::ParseCsv (const std::string &str, bool toRad)
 {
   NS_LOG_FUNCTION (this << str);
 
@@ -126,9 +124,9 @@ QdChannelModel::ReadNodesPosition ()
 {
   NS_LOG_FUNCTION (this);
 
-  std::string posFileName {m_path + m_scenario + "Output/Ns3/NodesPosition/NodesPosition.csv"};
+  std::string posFileName{m_path + m_scenario + "Output/Ns3/NodesPosition/NodesPosition.csv"};
 
-  uint32_t id {0};
+  uint32_t id{0};
   QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap;
 
   CsvReader csv (posFileName, ',');
@@ -147,11 +145,11 @@ QdChannelModel::ReadNodesPosition ()
       ok |= csv.GetValue (2, z);
 
       NS_ABORT_MSG_IF (!ok, "Something went wrong while parsing the file: " << posFileName);
-      Vector3D nodePosition {x, y, z};
+      Vector3D nodePosition{x, y, z};
 
       NS_LOG_DEBUG ("Trying to match position from file: " << nodePosition);
       m_nodePositionList.push_back (nodePosition);
-      bool found {false};
+      bool found{false};
       uint32_t matchedNodeId;
       for (NodeList::Iterator nit = NodeList::Begin (); nit != NodeList::End (); ++nit)
         {
@@ -175,16 +173,18 @@ QdChannelModel::ReadNodesPosition ()
           NS_LOG_ERROR ("Position not found: " << nodePosition);
         }
 
-      NS_ABORT_MSG_IF (!found, "Position not matched - did you install the mobility model before the channel is created");
+      NS_ABORT_MSG_IF (!found, "Position not matched - did you install the mobility model before "
+                               "the channel is created");
 
       rtIdToNs3IdMap.insert (std::make_pair (id, matchedNodeId));
       m_ns3IdToRtIdMap.insert (std::make_pair (matchedNodeId, id));
 
-      NS_LOG_INFO ("qdId=" << id  << " matches NodeId=" << matchedNodeId << " with position=" << nodePosition);
+      NS_LOG_INFO ("qdId=" << id << " matches NodeId=" << matchedNodeId
+                           << " with position=" << nodePosition);
 
       ++id;
 
-    }  // while FetchNextRow
+    } // while FetchNextRow
 
   for (auto elem : m_nodePositionList)
     {
@@ -199,7 +199,7 @@ QdChannelModel::ReadParaCfgFile ()
 {
   NS_LOG_FUNCTION (this);
 
-  std::string paraCfgCurrentFileName {m_path + m_scenario + "Input/paraCfgCurrent.txt"};
+  std::string paraCfgCurrentFileName{m_path + m_scenario + "Input/paraCfgCurrent.txt"};
   CsvReader csv (paraCfgCurrentFileName, '\t');
   csv.FetchNextRow (); // ignore first line (header)
 
@@ -215,7 +215,8 @@ QdChannelModel::ReadParaCfgFile ()
       // Expecting three values
       bool ok = csv.GetValue (0, varName);
       ok |= csv.GetValue (1, varValue);
-      NS_ABORT_MSG_IF (!ok, "Something went wrong while parsing the file: " << paraCfgCurrentFileName);
+      NS_ABORT_MSG_IF (!ok,
+                       "Something went wrong while parsing the file: " << paraCfgCurrentFileName);
 
       if (varName.compare ("numberOfTimeDivisions") == 0)
         {
@@ -234,7 +235,6 @@ QdChannelModel::ReadParaCfgFile ()
         }
 
     } // while FetchNextRow
-
 }
 
 void
@@ -254,14 +254,16 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
       int rxIndex = fileName.find ("Rx");
       int txtIndex = fileName.find (".txt");
 
-      int len {rxIndex - txIndex - 2};
-      int id_tx {::atoi (fileName.substr (txIndex + 2, len).c_str ())};
+      int len{rxIndex - txIndex - 2};
+      int id_tx{::atoi (fileName.substr (txIndex + 2, len).c_str ())};
       len = txtIndex - rxIndex - 2;
-      int id_rx {::atoi (fileName.substr (rxIndex + 2, len).c_str ())};
+      int id_rx{::atoi (fileName.substr (rxIndex + 2, len).c_str ())};
 
-      NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_tx) == rtIdToNs3IdMap.end (), "ID not found for TX!");
+      NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_tx) == rtIdToNs3IdMap.end (),
+                       "ID not found for TX!");
       uint32_t nodeIdTx = rtIdToNs3IdMap.find (id_tx)->second;
-      NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_rx) == rtIdToNs3IdMap.end (), "ID not found for RX!");
+      NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_rx) == rtIdToNs3IdMap.end (),
+                       "ID not found for RX!");
       uint32_t nodeIdRx = rtIdToNs3IdMap.find (id_rx)->second;
 
       NS_LOG_DEBUG ("id_tx: " << id_tx << ", id_rx: " << id_rx);
@@ -276,7 +278,7 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
 
       while (std::getline (qdFile, line))
         {
-          QdInfo qdInfo {};
+          QdInfo qdInfo{};
           // the file has a line with the number of multipath components
           qdInfo.numMpcs = std::stoul (line, 0, 10);
           NS_LOG_DEBUG ("numMpcs " << qdInfo.numMpcs);
@@ -371,14 +373,14 @@ QdChannelModel::ReadAllInputFiles ()
 
   // Setup simulation timings assuming constant periodicity
   NS_ASSERT_MSG (m_totTimesteps == m_qdInfoMap.begin ()->second.size (),
-                 "m_totTimesteps = " << m_totTimesteps << " != QdFiles size = " << m_qdInfoMap.begin ()->second.size ());
+                 "m_totTimesteps = " << m_totTimesteps << " != QdFiles size = "
+                                     << m_qdInfoMap.begin ()->second.size ());
 
   m_updatePeriod = NanoSeconds ((double) m_totalTimeDuration.GetNanoSeconds () / (double) m_totTimesteps);
   NS_LOG_DEBUG ("m_totalTimeDuration=" << m_totalTimeDuration.GetSeconds () << " s"
                 ", m_updatePeriod=" << m_updatePeriod.GetNanoSeconds () / 1e6 << " ms"
                 ", m_totTimesteps=" << m_totTimesteps);
 }
-
 
 Time
 QdChannelModel::GetQdSimTime () const
@@ -395,7 +397,7 @@ QdChannelModel::GetFrequency () const
 }
 
 void
-QdChannelModel::TrimFolderName (std::string& folder)
+QdChannelModel::TrimFolderName (std::string &folder)
 {
   // avoid starting with multiple '/'
   while (folder.front () == '/' &&
@@ -421,7 +423,7 @@ QdChannelModel::SetScenario (std::string scenario)
 
   TrimFolderName (scenario);
 
-  if (scenario != m_scenario   // avoid re-reading input files
+  if (scenario != m_scenario // avoid re-reading input files
       && scenario != "")
     {
       m_scenario = scenario;
@@ -452,27 +454,33 @@ QdChannelModel::GetPath () const
   return m_path;
 }
 
-
 bool
-QdChannelModel::ChannelMatrixNeedsUpdate (Ptr<const MatrixBasedChannelModel::ChannelMatrix> channelMatrix) const
+QdChannelModel::ChannelMatrixNeedsUpdate (
+    Ptr<const MatrixBasedChannelModel::ChannelMatrix> channelMatrix) const
 {
   NS_LOG_FUNCTION (this << channelMatrix);
 
   uint64_t nowTimestep = GetTimestep ();
   uint64_t lastChanUpdateTimestep = GetTimestep (channelMatrix->m_generatedTime);
 
-  NS_ASSERT_MSG (nowTimestep >= lastChanUpdateTimestep, "Current timestep=" << nowTimestep << ", last channel update timestep=" << lastChanUpdateTimestep);
+  NS_ASSERT_MSG (nowTimestep >= lastChanUpdateTimestep,
+                 "Current timestep=" << nowTimestep << ", last channel update timestep="
+                                     << lastChanUpdateTimestep);
 
   bool update = false;
   // if the coherence time is over the channel has to be updated
   if (lastChanUpdateTimestep < nowTimestep)
     {
-      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update needed");
+      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds ()
+                                       << " now " << Simulator::Now ().GetNanoSeconds ()
+                                       << " update needed");
       update = true;
     }
   else
     {
-      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds () << " now " << Simulator::Now ().GetNanoSeconds () << " update not needed");
+      NS_LOG_LOGIC ("Generation time " << channelMatrix->m_generatedTime.GetNanoSeconds ()
+                                       << " now " << Simulator::Now ().GetNanoSeconds ()
+                                       << " update not needed");
     }
 
   return update;
@@ -539,7 +547,8 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
 {
   NS_LOG_FUNCTION (this << aMob << bMob << aAntenna << bAntenna);
 
-  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelParams = Create<MatrixBasedChannelModel::ChannelMatrix> ();
+  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelParams =
+      Create<MatrixBasedChannelModel::ChannelMatrix> ();
 
   uint32_t timestep = GetTimestep ();
   uint32_t aId = aMob->GetObject<Node> ()->GetId ();
@@ -572,31 +581,32 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
         {
           if (qdInfo.numMpcs > 0)
             {
-              H[bIndex][aIndex].resize (1, std::complex<double> (0,0));
+              H[bIndex][aIndex].resize (1, std::complex<double> (0, 0));
             }
           else
             {
-              H[bIndex][aIndex].resize (0, std::complex<double> (0,0));
+              H[bIndex][aIndex].resize (0, std::complex<double> (0, 0));
             }
         }
     }
 
   for (uint64_t mpcIndex = 0; mpcIndex < qdInfo.numMpcs; ++mpcIndex)
     {
-      double initialPhase = -2 * M_PI * qdInfo.delay_s[mpcIndex] * m_frequency + qdInfo.phase_rad[mpcIndex];
+      double initialPhase =
+          -2 * M_PI * qdInfo.delay_s[mpcIndex] * m_frequency + qdInfo.phase_rad[mpcIndex];
       double pathGain = pow (10, qdInfo.pathGain_dbpow[mpcIndex] / 20);
-      
+
       Angles bAngle = Angles (qdInfo.azAoa_rad[mpcIndex], qdInfo.elAoa_rad[mpcIndex]);
       Angles aAngle = Angles (qdInfo.azAod_rad[mpcIndex], qdInfo.elAod_rad[mpcIndex]);
       NS_LOG_DEBUG ("aAngle: " << aAngle << ", bAngle: " << bAngle);
-      
+
       // ignore polarization
       double bFieldPattH, bFieldPattV, aFieldPattH, aFieldPattV;
       std::tie (bFieldPattH, bFieldPattV) = bAntenna->GetElementFieldPattern (bAngle);
       double bElementGain = std::sqrt (bFieldPattH * bFieldPattH + bFieldPattV * bFieldPattV);
       std::tie (aFieldPattH, aFieldPattV) = aAntenna->GetElementFieldPattern (aAngle);
       double aElementGain = std::sqrt (aFieldPattH * aFieldPattH + aFieldPattV * aFieldPattV);
-      
+
       double pgTimesGains = pathGain * bElementGain * aElementGain;
       std::complex<double> complexRay = pgTimesGains * std::polar (1.0, initialPhase);
 
@@ -615,21 +625,25 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
       for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
         {
           Vector uLoc = bAntenna->GetElementLocation (bIndex);
-          double bPhaseElementPhase = 2 * M_PI * (sin (qdInfo.elAoa_rad[mpcIndex]) * cos (qdInfo.azAoa_rad[mpcIndex]) * uLoc.x
-                                           + sin (qdInfo.elAoa_rad[mpcIndex]) * sin (qdInfo.azAoa_rad[mpcIndex]) * uLoc.y
-                                           + cos (qdInfo.elAoa_rad[mpcIndex]) * uLoc.z);
+          double bPhaseElementPhase =
+              2 * M_PI *
+              (sin (qdInfo.elAoa_rad[mpcIndex]) * cos (qdInfo.azAoa_rad[mpcIndex]) * uLoc.x +
+               sin (qdInfo.elAoa_rad[mpcIndex]) * sin (qdInfo.azAoa_rad[mpcIndex]) * uLoc.y +
+               cos (qdInfo.elAoa_rad[mpcIndex]) * uLoc.z);
           std::complex<double> bWeight = std::polar (1.0, bPhaseElementPhase);
 
           for (uint64_t aIndex = 0; aIndex < aSize; ++aIndex)
             {
               Vector sLoc = aAntenna->GetElementLocation (aIndex);
               // minus sign: complex conjugate for TX steering vector
-              double aPhaseElementPhase = 2 * M_PI * (sin (qdInfo.elAod_rad[mpcIndex]) * cos (qdInfo.azAod_rad[mpcIndex]) * sLoc.x
-                                               + sin (qdInfo.elAod_rad[mpcIndex]) * sin (qdInfo.azAod_rad[mpcIndex]) * sLoc.y
-                                               + cos (qdInfo.elAod_rad[mpcIndex]) * sLoc.z);
+              double aPhaseElementPhase =
+                  2 * M_PI *
+                  (sin (qdInfo.elAod_rad[mpcIndex]) * cos (qdInfo.azAod_rad[mpcIndex]) * sLoc.x +
+                   sin (qdInfo.elAod_rad[mpcIndex]) * sin (qdInfo.azAod_rad[mpcIndex]) * sLoc.y +
+                   cos (qdInfo.elAod_rad[mpcIndex]) * sLoc.z);
               std::complex<double> aWeight = std::polar (1.0, aPhaseElementPhase);
 
-              std::complex<double> ray =  complexRay * bWeight * aWeight;
+              std::complex<double> ray = complexRay * bWeight * aWeight;
               H[bIndex][aIndex][0] += ray;
             }
         }
@@ -666,21 +680,22 @@ QdChannelModel::GetTimestep (void) const
   return GetTimestep (Simulator::Now ());
 }
 
-
 uint64_t
 QdChannelModel::GetTimestep (Time t) const
 {
   NS_LOG_FUNCTION (this << t);
-  NS_ASSERT_MSG (m_updatePeriod.GetNanoSeconds () > 0.0, "QdChannelModel update period not set correctly");
+  NS_ASSERT_MSG (m_updatePeriod.GetNanoSeconds () > 0.0,
+                 "QdChannelModel update period not set correctly");
 
   uint64_t timestep = t.GetNanoSeconds () / m_updatePeriod.GetNanoSeconds ();
   NS_LOG_DEBUG ("t = " << t.GetNanoSeconds () << " ns" <<
                 ", updatePeriod = " << m_updatePeriod.GetNanoSeconds () << " ns" <<
                 ", timestep = " << timestep);
 
-  NS_ASSERT_MSG (timestep <= m_totTimesteps, "Simulator is running for longer that expected: timestep > m_totTimesteps");
+  NS_ASSERT_MSG (timestep <= m_totTimesteps,
+                 "Simulator is running for longer that expected: timestep > m_totTimesteps");
 
   return timestep;
 }
 
-}  // namespace ns3
+} // namespace ns3

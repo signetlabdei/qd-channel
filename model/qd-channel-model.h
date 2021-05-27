@@ -185,7 +185,7 @@ private:
    * \param pattern glob pattern for QD files
    * \return list of QD file names
    */
-  std::vector<std::string> GetQdFilesList (const std::string& pattern);
+  std::vector<std::string> GetQdFilesList (const std::string &pattern);
 
   /**
    * Parse numerice CSV string
@@ -194,7 +194,7 @@ private:
    * \param toRad if true, convert from degrees to radians, otherwise, do nothing
    * \return vector of parsed numeric values
    */
-  std::vector<double> ParseCsv (const std::string& str, bool toRad = false);
+  std::vector<double> ParseCsv (const std::string &str, bool toRad = false);
 
   /**
    * Trim folder name in order to avoid '/' at the beginning of the file name
@@ -202,7 +202,7 @@ private:
    *
    * \param folder string containing the folder name
    */
-  static void TrimFolderName (std::string& folder);
+  static void TrimFolderName (std::string &folder);
 
   /*
    * Structure containing information parsed from QdFiles
@@ -219,15 +219,18 @@ private:
     std::vector<double> azAoa_rad;
   };
 
-  std::map<uint32_t, Ptr<const MatrixBasedChannelModel::ChannelMatrix> > m_channelMap; //!< map containing the channel realizations indexed by channel key
+  std::map<uint32_t, Ptr<const MatrixBasedChannelModel::ChannelMatrix>>
+      m_channelMap; //!< map containing the channel realizations indexed by channel key
   Time m_updatePeriod; //!< the channel update period
   uint32_t m_totTimesteps; //!< total number of timesteps for the simulation
   Time m_totalTimeDuration; //!< duration of the simulation
   double m_frequency; //!< the operating frequency [Hz]
   std::vector<Vector3D> m_nodePositionList; //!< initial position of each node
 
-  std::map<uint32_t, std::vector<QdInfo> > m_qdInfoMap; //!< map containing QD-related information for each node pair
-  Ns3IdToRtIdMap_t m_ns3IdToRtIdMap; //!< map containing a conversion from ns-3 node id to qd-realization node id
+  std::map<uint32_t, std::vector<QdInfo>>
+      m_qdInfoMap; //!< map containing QD-related information for each node pair
+  Ns3IdToRtIdMap_t
+      m_ns3IdToRtIdMap; //!< map containing a conversion from ns-3 node id to qd-realization node id
 
   std::string m_path; //!< folder path containing the scenario of interest
   std::string m_scenario; //!< scenario folder name, containg the Input/ and the Output/Ns3/ folders
@@ -236,4 +239,3 @@ private:
 } // namespace ns3
 
 #endif /* QD_CHANNEL_MODEL_H */
-

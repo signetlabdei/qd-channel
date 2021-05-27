@@ -22,8 +22,7 @@ private:
   virtual void DoRun (void);
 };
 
-QdChannelTestCaseInput::QdChannelTestCaseInput ()
-  : TestCase ("QdChannelTestCaseInput")
+QdChannelTestCaseInput::QdChannelTestCaseInput () : TestCase ("QdChannelTestCaseInput")
 {
 }
 
@@ -55,12 +54,14 @@ QdChannelTestCaseInput::DoRun (void)
   nodes.Get (1)->AggregateObject (mob1);
 
   // Create the channel model
-  std::string qdFilesPath = "contrib/qd-channel/model/QD/"; // The path of the folder with the QD scenarios
+  std::string qdFilesPath =
+      "contrib/qd-channel/model/QD/"; // The path of the folder with the QD scenarios
   std::string scenario = "Indoor1"; // The name of the scenario
   Ptr<QdChannelModel> qdChannel = CreateObject<QdChannelModel> (qdFilesPath, scenario);
 
   // tests
-  NS_TEST_ASSERT_MSG_EQ_TOL (qdChannel->GetQdSimTime ().GetSeconds (), 15.665, 1e-9, "Checking simulation time");
+  NS_TEST_ASSERT_MSG_EQ_TOL (qdChannel->GetQdSimTime ().GetSeconds (), 15.665, 1e-9,
+                             "Checking simulation time");
   NS_TEST_ASSERT_MSG_EQ_TOL (qdChannel->GetFrequency (), 60e9, 1, "Checking simulation frequency");
 }
 
@@ -74,8 +75,7 @@ public:
   QdChannelTestSuite ();
 };
 
-QdChannelTestSuite::QdChannelTestSuite ()
-  : TestSuite ("qd-channel-test-suite", UNIT)
+QdChannelTestSuite::QdChannelTestSuite () : TestSuite ("qd-channel-test-suite", UNIT)
 {
   // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
   AddTestCase (new QdChannelTestCaseInput, TestCase::QUICK);
