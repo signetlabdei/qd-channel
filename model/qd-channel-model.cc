@@ -489,8 +489,8 @@ QdChannelModel::ChannelMatrixNeedsUpdate (
 Ptr<const MatrixBasedChannelModel::ChannelMatrix>
 QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
                             Ptr<const MobilityModel> bMob,
-                            Ptr<const ThreeGppAntennaArrayModel> aAntenna,
-                            Ptr<const ThreeGppAntennaArrayModel> bAntenna)
+                            Ptr<const PhasedArrayModel> aAntenna,
+                            Ptr<const PhasedArrayModel> bAntenna)
 {
   NS_LOG_FUNCTION (this << aMob << bMob << aAntenna << bAntenna);
 
@@ -542,8 +542,8 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
 Ptr<const MatrixBasedChannelModel::ChannelMatrix>
 QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
                                Ptr<const MobilityModel> bMob,
-                               Ptr<const ThreeGppAntennaArrayModel> aAntenna,
-                               Ptr<const ThreeGppAntennaArrayModel> bAntenna) const
+                               Ptr<const PhasedArrayModel> aAntenna,
+                               Ptr<const PhasedArrayModel> bAntenna) const
 {
   NS_LOG_FUNCTION (this << aMob << bMob << aAntenna << bAntenna);
 

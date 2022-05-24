@@ -27,7 +27,7 @@
 #include <fstream>
 #include "ns3/core-module.h"
 #include "ns3/qd-channel-model.h"
-#include "ns3/three-gpp-antenna-array-model.h"
+#include "ns3/uniform-planar-array.h"
 #include "ns3/three-gpp-spectrum-propagation-loss-model.h"
 #include "ns3/simple-net-device.h"
 #include "ns3/node-container.h"
@@ -48,8 +48,8 @@ uint32_t timeRes = 5; // Time resolution in milliseconds
 Ptr<QdChannelModel> qdChannel;
 Ptr<MobilityModel> txMob;
 Ptr<MobilityModel> rxMob;
-Ptr<ThreeGppAntennaArrayModel> txAntenna;
-Ptr<ThreeGppAntennaArrayModel> rxAntenna;
+Ptr<PhasedArrayModel> txAntenna;
+Ptr<PhasedArrayModel> rxAntenna;
 Ptr<ThreeGppSpectrumPropagationLossModel> spectrumLossModel;
 
 /**
@@ -59,7 +59,8 @@ Ptr<ThreeGppSpectrumPropagationLossModel> spectrumLossModel;
  * \param rxDevice the device towards which point the beam
  * \param rxAntenna the antenna object associated to rxDevice
  */
-static void DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayModel> txAntenna, Ptr<NetDevice> rxDevice, Ptr<ThreeGppAntennaArrayModel> rxAntenna);
+static void DoBeamforming (Ptr<NetDevice> txDevice, Ptr<PhasedArrayModel> txAntenna,
+                           Ptr<NetDevice> rxDevice, Ptr<PhasedArrayModel> rxAntenna);
 /*
  * Compute the average SNR, print it to both terminal and file
  */
@@ -109,14 +110,12 @@ main (int argc, char *argv[])
   spectrumLossModel = CreateObjectWithAttributes<ThreeGppSpectrumPropagationLossModel> ("ChannelModel", PointerValue (qdChannel));
 
   // Create the antenna objects and set their dimensions
-  txAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2),
-                                                                     "NumRows", UintegerValue (2),
-                                                                     "IsotropicElements", BooleanValue (true));
+  txAntenna = CreateObjectWithAttributes<UniformPlanarArray> ("NumColumns", UintegerValue (2),
+                                                              "NumRows", UintegerValue (2));
   txNode->AggregateObject (txAntenna);
 
-  rxAntenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumColumns", UintegerValue (2),
-                                                                     "NumRows", UintegerValue (2),
-                                                                     "IsotropicElements", BooleanValue (true));
+  rxAntenna = CreateObjectWithAttributes<UniformPlanarArray> ("NumColumns", UintegerValue (2),
+                                                              "NumRows", UintegerValue (2));
   rxNode->AggregateObject (rxAntenna);
 
   // Initialize the devices in the ThreeGppSpectrumPropagationLossModel
@@ -134,7 +133,8 @@ main (int argc, char *argv[])
 
 /*  UTILITIES */
 static void
-DoBeamforming (Ptr<NetDevice> txDevice, Ptr<ThreeGppAntennaArrayModel> txAntenna, Ptr<NetDevice> rxDevice, Ptr<ThreeGppAntennaArrayModel> rxAntenna)
+DoBeamforming (Ptr<NetDevice> txDevice, Ptr<PhasedArrayModel> txAntenna, 
+               Ptr<NetDevice> rxDevice, Ptr<PhasedArrayModel> rxAntenna)
 {
   Ptr<MobilityModel> thisMob = txDevice->GetNode ()->GetObject<MobilityModel> ();
   Ptr<MobilityModel> otherMob = rxDevice->GetNode ()->GetObject<MobilityModel> ();
