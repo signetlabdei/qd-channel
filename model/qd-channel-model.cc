@@ -25,6 +25,7 @@
 #include "ns3/double.h"
 #include "ns3/string.h"
 #include "ns3/integer.h"
+#include "ns3/ns2-mobility-helper.h"
 #include <algorithm>
 #include <random>
 #include "ns3/log.h"
@@ -119,79 +120,16 @@ QdChannelModel::ParseCsv (const std::string &str, bool toRad)
   return vect;
 }
 
-QdChannelModel::RtIdToNs3IdMap_t
+void
 QdChannelModel::ReadNodesPosition ()
 {
   NS_LOG_FUNCTION (this);
 
-  std::string posFileName{m_path + m_scenario + "Output/Ns3/NodesPosition/NodesPosition.csv"};
+  std::string posFileName{m_path + m_scenario + "Output/Ns3/NodesPosition/ns3_position.txt"};
+  
+  Ns2MobilityHelper ns2 = Ns2MobilityHelper (posFileName);
+  ns2.Install ();
 
-  uint32_t id{0};
-  QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap;
-
-  CsvReader csv (posFileName, ',');
-  while (csv.FetchNextRow ())
-    {
-      // Ignore blank lines
-      if (csv.IsBlankRow ())
-        {
-          continue;
-        }
-
-      // Expecting cartesian coordinates
-      double x, y, z;
-      bool ok = csv.GetValue (0, x);
-      ok |= csv.GetValue (1, y);
-      ok |= csv.GetValue (2, z);
-
-      NS_ABORT_MSG_IF (!ok, "Something went wrong while parsing the file: " << posFileName);
-      Vector3D nodePosition{x, y, z};
-
-      NS_LOG_DEBUG ("Trying to match position from file: " << nodePosition);
-      m_nodePositionList.push_back (nodePosition);
-      bool found{false};
-      uint32_t matchedNodeId;
-      for (NodeList::Iterator nit = NodeList::Begin (); nit != NodeList::End (); ++nit)
-        {
-          Ptr<MobilityModel> mm = (*nit)->GetObject<MobilityModel> ();
-          if (mm != 0)
-            {
-              // TODO automatically import nodes' initial positions to avoid manual setting every time the scenario changes
-              Vector3D pos = mm->GetPosition ();
-              NS_LOG_DEBUG ("Checking node with position: " << pos);
-              if (nodePosition == pos)
-                {
-                  found = true;
-                  matchedNodeId = (*nit)->GetId ();
-                  NS_LOG_LOGIC ("got a match " << pos << " ID " << matchedNodeId);
-                  break;
-                }
-            }
-        }
-      if (!found)
-        {
-          NS_LOG_ERROR ("Position not found: " << nodePosition);
-        }
-
-      NS_ABORT_MSG_IF (!found, "Position not matched - did you install the mobility model before "
-                               "the channel is created");
-
-      rtIdToNs3IdMap.insert (std::make_pair (id, matchedNodeId));
-      m_ns3IdToRtIdMap.insert (std::make_pair (matchedNodeId, id));
-
-      NS_LOG_INFO ("qdId=" << id << " matches NodeId=" << matchedNodeId
-                           << " with position=" << nodePosition);
-
-      ++id;
-
-    } // while FetchNextRow
-
-  for (auto elem : m_nodePositionList)
-    {
-      NS_LOG_INFO (elem);
-    }
-
-  return rtIdToNs3IdMap;
 }
 
 void
@@ -238,7 +176,7 @@ QdChannelModel::ReadParaCfgFile ()
 }
 
 void
-QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
+QdChannelModel::ReadQdFiles ()
 {
   NS_LOG_FUNCTION (this);
 
@@ -259,16 +197,9 @@ QdChannelModel::ReadQdFiles (QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap)
       len = txtIndex - rxIndex - 2;
       int id_rx{::atoi (fileName.substr (rxIndex + 2, len).c_str ())};
 
-      NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_tx) == rtIdToNs3IdMap.end (),
-                       "ID not found for TX!");
-      uint32_t nodeIdTx = rtIdToNs3IdMap.find (id_tx)->second;
-      NS_ABORT_MSG_IF (rtIdToNs3IdMap.find (id_rx) == rtIdToNs3IdMap.end (),
-                       "ID not found for RX!");
-      uint32_t nodeIdRx = rtIdToNs3IdMap.find (id_rx)->second;
-
       NS_LOG_DEBUG ("id_tx: " << id_tx << ", id_rx: " << id_rx);
 
-      uint32_t key = GetKey (nodeIdTx, nodeIdRx);
+      uint32_t key = GetKey (id_tx, id_rx);
       // std::pair<Ptr<const MobilityModel>, Ptr<const MobilityModel>> idPair {std::make_pair(tx_mm, rx_mm)};
 
       std::ifstream qdFile{fileName.c_str ()};
@@ -368,8 +299,8 @@ QdChannelModel::ReadAllInputFiles ()
   m_qdInfoMap.clear ();
 
   ReadParaCfgFile ();
-  QdChannelModel::RtIdToNs3IdMap_t rtIdToNs3IdMap = ReadNodesPosition ();
-  ReadQdFiles (rtIdToNs3IdMap);
+  ReadNodesPosition ();
+  ReadQdFiles ();
 
   // Setup simulation timings assuming constant periodicity
   NS_ASSERT_MSG (m_totTimesteps == m_qdInfoMap.begin ()->second.size (),
