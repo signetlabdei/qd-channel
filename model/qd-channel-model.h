@@ -105,10 +105,19 @@ public:
    */
   std::string GetScenario () const;
 
+
+  /**
+   * Just a dummy setter for compatibility reasons.
+   * NOTE: the carrier frequency is imported from the QD input
+   * files. This setter should not be manually used, and it is here
+   * only because attributes are required to have a setter.
+   * 
+   * \param fc the center frequency in Hz
+   */
+  void SetFrequency (double fc);
+
   /**
    * Returns the center frequency
-   * NOTE: the carrier frequency is imported from the QD input
-   * files, thus not setter has been added to this class.
    * 
    * \return the center frequency in Hz
    */
@@ -224,7 +233,9 @@ private:
   Time m_updatePeriod; //!< the channel update period
   uint32_t m_totTimesteps; //!< total number of timesteps for the simulation
   Time m_totalTimeDuration; //!< duration of the simulation
-  double m_frequency; //!< the operating frequency [Hz]
+  double m_frequency; /**< the operating frequency [Hz]. 
+                           This value should NOT be manually set by the user, 
+                           as the frequency is parsed from the channel traces instead. */
   std::vector<Vector3D> m_nodePositionList; //!< initial position of each node
 
   std::map<uint32_t, std::vector<QdInfo>>
