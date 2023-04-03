@@ -160,10 +160,10 @@ private:
    * \param bAntenna antenna of the b device
    * \return the channel matrix
    */
-  Ptr<const MatrixBasedChannelModel::ChannelMatrix> GetNewChannel (Ptr<const MobilityModel> aMob,
+  Ptr<MatrixBasedChannelModel::ChannelMatrix> GetNewChannel (Ptr<const MobilityModel> aMob,
                                                                    Ptr<const MobilityModel> bMob,
                                                                    Ptr<const PhasedArrayModel> aAntenna,
-                                                                   Ptr<const PhasedArrayModel> bAntenna) const;
+                                                                   Ptr<const PhasedArrayModel> bAntenna);
 
   /**
    * Check if the channel matrix has to be updated
@@ -241,8 +241,9 @@ private:
     std::vector<double> azAoa_rad;
   };
 
-  std::map<uint32_t, Ptr<const MatrixBasedChannelModel::ChannelMatrix>>
+  std::map<uint32_t, Ptr<MatrixBasedChannelModel::ChannelMatrix>>
       m_channelMap; //!< map containing the channel realizations indexed by channel key
+  std::map<uint64_t, Ptr<MatrixBasedChannelModel::ChannelParams>> m_channelParamsMap;
   Time m_updatePeriod; //!< the channel update period
   uint32_t m_totTimesteps; //!< total number of timesteps for the simulation
   Time m_totalTimeDuration; //!< duration of the simulation

@@ -516,7 +516,7 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
   // generate a new channel
   bool update = false;
   bool notFound = false;
-  Ptr<const MatrixBasedChannelModel::ChannelMatrix> channelMatrix;
+  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelMatrix;
   if (m_channelMap.find (channelId) != m_channelMap.end ())
     {
       // channel matrix present in the map
@@ -539,6 +539,9 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
       NS_LOG_LOGIC ("channelMatrix notFound=" << notFound << " || update=" << update);
       channelMatrix = GetNewChannel (aMob, bMob, aAntenna, bAntenna);
 
+      channelMatrix->m_antennaPair = std::make_pair(aAntenna->GetId(), bAntenna->GetId()); // save antenna pair, with the exact order of s and u
+                                               // antennas at the moment of the channel generation
+
       // store the channel matrix in the channel map
       m_channelMap[channelId] = channelMatrix;
     }
@@ -546,11 +549,11 @@ QdChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
   return channelMatrix;
 }
 
-Ptr<const MatrixBasedChannelModel::ChannelMatrix>
+Ptr<MatrixBasedChannelModel::ChannelMatrix>
 QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
                                Ptr<const MobilityModel> bMob,
                                Ptr<const PhasedArrayModel> aAntenna,
-                               Ptr<const PhasedArrayModel> bAntenna) const
+                               Ptr<const PhasedArrayModel> bAntenna)
 {
   NS_LOG_FUNCTION (this << aMob << bMob << aAntenna << bAntenna);
 
@@ -639,7 +642,7 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
         }
     }
 
-  Ptr<ChannelParams> channelParams = Create<ChannelParams> ();
+  Ptr<MatrixBasedChannelModel::ChannelParams> channelParams = Create<MatrixBasedChannelModel::ChannelParams> ();
 
   channelMatrix->m_channel = H;
   channelParams->m_delay = qdInfo.delay_s;
@@ -653,15 +656,31 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
   channelParams->m_generatedTime = Simulator::Now ();
   channelParams->m_nodeIds = std::make_pair (aId, bId);
 
-  // std::cout << "H matrix at timestep " << +timestep << std::endl;
-  // for (uint64_t bIndex = 0; bIndex < bSize; ++bIndex)
-  //     {
-  //       for (uint64_t aIndex = 0; aIndex < aSize; ++aIndex)
-  //         {
-  //          std::cout << std::showpos << std::real (H[bIndex][aIndex][0]) << std::imag (H[bIndex][aIndex][0]) << "j,";
-  //         }
-  //       std::cout << ";..." << std::endl;
-  //     }
+      // Compute alpha and D as described in 3GPP TR 37.885 v15.3.0, Sec. 6.2.3
+    // These terms account for an additional Doppler contribution due to the
+    // presence of moving objects in the surrounding environment, such as in
+    // vehicular scenarios.
+    // This contribution is applied only to the delayed (reflected) paths and
+    // must be properly configured by setting the value of
+    // m_vScatt, which is defined as "maximum speed of the vehicle in the
+    // layout".
+    // By default, m_vScatt is set to 0, so there is no additional Doppler
+    // contribution.
+
+    DoubleVector dopplerTermAlpha;
+    DoubleVector dopplerTermD;
+    for (uint8_t cIndex = 0; cIndex < H.GetNumPages (); cIndex++)
+    {
+        // Set the alpha and D as described in 3GPP TR 37.885 v15.3.0, Sec. 6.2.3,
+        // both to 0, to avoid introducing additional scatter terms
+        dopplerTermAlpha.push_back(0.0);
+        dopplerTermD.push_back(0.0);
+    }
+    channelParams->m_alpha = dopplerTermAlpha;
+    channelParams->m_D = dopplerTermD;
+
+  // Store channel parameters
+  m_channelParamsMap [channelId] = channelParams;
 
   return channelMatrix;
 }
@@ -671,8 +690,21 @@ Ptr<const MatrixBasedChannelModel::ChannelParams>
 QdChannelModel::GetParams(Ptr<const MobilityModel> aMob,
                           Ptr<const MobilityModel> bMob) const
 {
-  // temp
-  return Create<MatrixBasedChannelModel::ChannelParams> ();
+    NS_LOG_FUNCTION(this);
+
+    // Compute the channel key. The key is reciprocal, i.e., key (a, b) = key (b, a)
+    uint64_t channelParamsKey =
+        GetKey(aMob->GetObject<Node>()->GetId(), bMob->GetObject<Node>()->GetId());
+
+    if (m_channelParamsMap.find(channelParamsKey) != m_channelParamsMap.end())
+    {
+        return m_channelParamsMap.find(channelParamsKey)->second;
+    }
+    else
+    {
+        NS_LOG_WARN("Channel params map not found. Returning a nullptr.");
+        return nullptr;
+    }
 }
 
 uint64_t
