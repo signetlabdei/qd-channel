@@ -28,6 +28,7 @@
 #include "ns3/random-variable-stream.h"
 #include "ns3/boolean.h"
 #include "ns3/matrix-based-channel-model.h"
+#include <ns3/three-gpp-channel-model.h>
 
 namespace ns3 {
 
@@ -74,6 +75,17 @@ public:
                                                                 Ptr<const MobilityModel> bMob,
                                                                 Ptr<const PhasedArrayModel> aAntenna,
                                                                 Ptr<const PhasedArrayModel> bAntenna) override;
+
+      /**
+     * Looks for the channel params associated to the aMob and bMob pair in
+     * m_channelParamsMap. If not found it will return a nullptr.
+     *
+     * \param aMob mobility model of the a device
+     * \param bMob mobility model of the b device
+     * \return the channel params
+     */
+    Ptr<const ChannelParams> GetParams(Ptr<const MobilityModel> aMob,
+                                       Ptr<const MobilityModel> bMob) const override;
 
   /*
    * Set the folder path containing the scenario of interest

@@ -176,7 +176,8 @@ ComputeSnr ()
   DoBeamforming (txDevice, txAntenna, rxDevice, rxAntenna);
 
   // Apply the fast fading and the beamforming gain
-  rxPsd = spectrumLossModel->CalcRxPowerSpectralDensity (rxPsd, txMob, rxMob);
+  Ptr<SpectrumSignalParameters> rxParameters = Create<SpectrumSignalParameters>();
+  rxPsd = spectrumLossModel->CalcRxPowerSpectralDensity (rxParameters, txMob, rxMob, txAntenna, rxAntenna);
   NS_LOG_DEBUG ("Average rx power " << 10 * log10 (Sum (*rxPsd) * 180e3) << " dB");
 
   // Compute the SNR

@@ -554,7 +554,7 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
 {
   NS_LOG_FUNCTION (this << aMob << bMob << aAntenna << bAntenna);
 
-  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelParams =
+  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelMatrix =
       Create<MatrixBasedChannelModel::ChannelMatrix> ();
 
   uint32_t timestep = GetTimestep ();
@@ -639,7 +639,9 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
         }
     }
 
-  channelParams-> m_channel = H;
+  Ptr<ThreeGppChannelParams> channelParams = Create<ThreeGppChannelParams> ();
+
+  channelMatrix->m_channel = H;
   channelParams->m_delay = qdInfo.delay_s;
 
   channelParams->m_angle.clear ();
@@ -661,7 +663,14 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
   //       std::cout << ";..." << std::endl;
   //     }
 
-  return channelParams;
+  return channelMatrix;
+}
+
+
+Ptr<const ChannelParams> GetParams(Ptr<const MobilityModel> aMob,
+                                   Ptr<const MobilityModel> bMob) const
+{
+  return Create<ThreeGppChannelParams> ();
 }
 
 uint64_t
