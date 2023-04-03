@@ -639,7 +639,7 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
         }
     }
 
-  Ptr<ThreeGppChannelParams> channelParams = Create<ThreeGppChannelParams> ();
+  Ptr<ChannelParams> channelParams = Create<ChannelParams> ();
 
   channelMatrix->m_channel = H;
   channelParams->m_delay = qdInfo.delay_s;
@@ -667,10 +667,12 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
 }
 
 
-Ptr<const ChannelParams> GetParams(Ptr<const MobilityModel> aMob,
-                                   Ptr<const MobilityModel> bMob) const
+Ptr<const MatrixBasedChannelModel::ChannelParams> 
+QdChannelModel::GetParams(Ptr<const MobilityModel> aMob,
+                          Ptr<const MobilityModel> bMob) const
 {
-  return Create<ThreeGppChannelParams> ();
+  // temp
+  return Create<MatrixBasedChannelModel::ChannelParams> ();
 }
 
 uint64_t

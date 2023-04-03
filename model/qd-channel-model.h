@@ -27,12 +27,13 @@
 #include "ns3/nstime.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/boolean.h"
-#include "ns3/matrix-based-channel-model.h"
+#include <ns3/matrix-based-channel-model.h>
 #include <ns3/three-gpp-channel-model.h>
 
 namespace ns3 {
 
 class PhasedArrayModel;
+class MatrixBasedChannelModel;
 class MobilityModel;
 
 /**
@@ -84,7 +85,7 @@ public:
      * \param bMob mobility model of the b device
      * \return the channel params
      */
-    Ptr<const ChannelParams> GetParams(Ptr<const MobilityModel> aMob,
+    Ptr<const MatrixBasedChannelModel::ChannelParams> GetParams(Ptr<const MobilityModel> aMob,
                                        Ptr<const MobilityModel> bMob) const override;
 
   /*

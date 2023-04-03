@@ -32,8 +32,9 @@
 #include "ns3/simple-net-device.h"
 #include "ns3/node-container.h"
 #include "ns3/constant-position-mobility-model.h"
-#include "ns3/lte-spectrum-value-helper.h"
+#include <ns3/lte-spectrum-value-helper.h>
 #include "ns3/qd-channel-utils.h"
+#include <ns3/spectrum-signal-parameters.h>
 
 NS_LOG_COMPONENT_DEFINE ("QdChannelModelExample");
 
@@ -177,6 +178,7 @@ ComputeSnr ()
 
   // Apply the fast fading and the beamforming gain
   Ptr<SpectrumSignalParameters> rxParameters = Create<SpectrumSignalParameters>();
+  rxParameters->psd = rxPsd;
   rxPsd = spectrumLossModel->CalcRxPowerSpectralDensity (rxParameters, txMob, rxMob, txAntenna, rxAntenna);
   NS_LOG_DEBUG ("Average rx power " << 10 * log10 (Sum (*rxPsd) * 180e3) << " dB");
 
