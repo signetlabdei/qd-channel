@@ -21,139 +21,143 @@
  * This file contains some utility functions needed by the example script(s)
  */
 
-#include "ns3/core-module.h"
-#include "ns3/qd-channel-model.h"
-#include "ns3/phased-array-model.h"
 #include "ns3/qd-channel-utils.h"
 
-NS_LOG_COMPONENT_DEFINE ("QdChannelUtils");
+#include "ns3/core-module.h"
+#include "ns3/phased-array-model.h"
+#include "ns3/qd-channel-model.h"
 
-namespace ns3 {
+NS_LOG_COMPONENT_DEFINE("QdChannelUtils");
+
+namespace ns3
+{
 
 PhasedArrayModel::ComplexVector
-GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter, double threshold)
+GetFirstEigenvector(MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter, double threshold)
 {
-  uint16_t arraySize = A.GetNumCols ();
-  PhasedArrayModel::ComplexVector antennaWeights (arraySize);
-  for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
+    uint16_t arraySize = A.GetNumCols();
+    PhasedArrayModel::ComplexVector antennaWeights(arraySize);
+    for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
     {
-      antennaWeights[eIndex] = A(0, eIndex);
+        antennaWeights[eIndex] = A(0, eIndex);
     }
 
-  uint32_t iter = 0;
-  double diff = 1;
-  while (iter < nIter && diff > threshold)
+    uint32_t iter = 0;
+    double diff = 1;
+    while (iter < nIter && diff > threshold)
     {
-      PhasedArrayModel::ComplexVector antennaWeightsNew (arraySize);
+        PhasedArrayModel::ComplexVector antennaWeightsNew(arraySize);
 
-      for (uint16_t row = 0; row < arraySize; row++)
+        for (uint16_t row = 0; row < arraySize; row++)
         {
-          std::complex<double> sum (0, 0);
-          for (uint16_t col = 0; col < arraySize; col++)
+            std::complex<double> sum(0, 0);
+            for (uint16_t col = 0; col < arraySize; col++)
             {
-              sum += A(row, col) * antennaWeights[col];
+                sum += A(row, col) * antennaWeights[col];
             }
 
-          antennaWeightsNew[row] = sum;
+            antennaWeightsNew[row] = sum;
         }
-      // Normalize antennaWeights;
-      double weighbSum = 0;
-      for (uint16_t i = 0; i < arraySize; i++)
+        // Normalize antennaWeights;
+        double weighbSum = 0;
+        for (uint16_t i = 0; i < arraySize; i++)
         {
-          weighbSum += norm (antennaWeightsNew[i]);
+            weighbSum += norm(antennaWeightsNew[i]);
         }
-      for (uint16_t i = 0; i < arraySize; i++)
+        for (uint16_t i = 0; i < arraySize; i++)
         {
-          antennaWeightsNew[i] = antennaWeightsNew[i] / sqrt (weighbSum);
+            antennaWeightsNew[i] = antennaWeightsNew[i] / sqrt(weighbSum);
         }
-      diff = 0;
-      for (uint16_t i = 0; i < arraySize; i++)
+        diff = 0;
+        for (uint16_t i = 0; i < arraySize; i++)
         {
-          diff += std::norm (antennaWeightsNew[i] - antennaWeights[i]);
+            diff += std::norm(antennaWeightsNew[i] - antennaWeights[i]);
         }
-      iter++;
-      antennaWeights = antennaWeightsNew;
+        iter++;
+        antennaWeights = antennaWeightsNew;
     }
-  // NS_LOG_DEBUG ("antennaWeigths stopped after " << iter << " iterations with diff=" << diff << std::endl);
+    // NS_LOG_DEBUG ("antennaWeigths stopped after " << iter << " iterations with diff=" << diff <<
+    // std::endl);
 
-  return antennaWeights;
+    return antennaWeights;
 }
 
 std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector>
-ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params)
+ComputeSvdBeamformingVectors(Ptr<const MatrixBasedChannelModel::ChannelMatrix> params)
 {
-  // params
-  uint32_t svdIter = 30;
-  double svdThresh = 1e-8;
+    // params
+    uint32_t svdIter = 30;
+    double svdThresh = 1e-8;
 
-  // Generate transmitter side spatial correlation matrix
-  uint16_t aSize = params->m_channel.GetNumRows ();
-  uint16_t bSize = params->m_channel.GetNumCols ();
-  uint16_t clusterSize = params->m_channel.GetNumPages ();
+    // Generate transmitter side spatial correlation matrix
+    uint16_t aSize = params->m_channel.GetNumRows();
+    uint16_t bSize = params->m_channel.GetNumCols();
+    uint16_t clusterSize = params->m_channel.GetNumPages();
 
-  // Compute narrowband channel by summing over the tap index
-  MatrixBasedChannelModel::Complex2DVector narrowbandChannel (aSize, bSize);
+    // Compute narrowband channel by summing over the tap index
+    MatrixBasedChannelModel::Complex2DVector narrowbandChannel(aSize, bSize);
 
-  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
+    for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
     {
-      for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
+        for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
         {
-          std::complex<double> cSum (0, 0);
-          for (uint16_t cIndex = 0; cIndex < clusterSize; cIndex++)
+            std::complex<double> cSum(0, 0);
+            for (uint16_t cIndex = 0; cIndex < clusterSize; cIndex++)
             {
-              cSum += params->m_channel(aIndex, bIndex, cIndex);
+                cSum += params->m_channel(aIndex, bIndex, cIndex);
             }
-          narrowbandChannel(aIndex, bIndex) = cSum;
+            narrowbandChannel(aIndex, bIndex) = cSum;
         }
     }
 
-  // Compute the transmitter side spatial correlation matrix bQ = H*H, where H is the sum of H_n over n taps.
-  // The * operator is the transponse conjugate
-  MatrixBasedChannelModel::Complex2DVector bQ (bSize, bSize);
+    // Compute the transmitter side spatial correlation matrix bQ = H*H, where H is the sum of H_n
+    // over n taps. The * operator is the transponse conjugate
+    MatrixBasedChannelModel::Complex2DVector bQ(bSize, bSize);
 
-  for (uint16_t b1Index = 0; b1Index < bSize; b1Index++)
+    for (uint16_t b1Index = 0; b1Index < bSize; b1Index++)
     {
-      for (uint16_t b2Index = 0; b2Index < bSize; b2Index++)
+        for (uint16_t b2Index = 0; b2Index < bSize; b2Index++)
         {
-          std::complex<double> aSum (0, 0);
-          for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
+            std::complex<double> aSum(0, 0);
+            for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
             {
-              aSum += std::conj (narrowbandChannel(aIndex, b1Index)) *
-                      narrowbandChannel(aIndex, b2Index);
+                aSum += std::conj(narrowbandChannel(aIndex, b1Index)) *
+                        narrowbandChannel(aIndex, b2Index);
             }
-          bQ(b1Index, b2Index) += aSum;
+            bQ(b1Index, b2Index) += aSum;
         }
     }
 
-  // Calculate beamforming vector from spatial correlation matrix
-  PhasedArrayModel::ComplexVector bW = GetFirstEigenvector (bQ, svdIter, svdThresh);
+    // Calculate beamforming vector from spatial correlation matrix
+    PhasedArrayModel::ComplexVector bW = GetFirstEigenvector(bQ, svdIter, svdThresh);
 
-  // Compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over n clusters.
-  MatrixBasedChannelModel::Complex2DVector aQ (aSize, aSize);
+    // Compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over
+    // n clusters.
+    MatrixBasedChannelModel::Complex2DVector aQ(aSize, aSize);
 
-  for (uint16_t a1Index = 0; a1Index < aSize; a1Index++)
+    for (uint16_t a1Index = 0; a1Index < aSize; a1Index++)
     {
-      for (uint16_t a2Index = 0; a2Index < aSize; a2Index++)
+        for (uint16_t a2Index = 0; a2Index < aSize; a2Index++)
         {
-          std::complex<double> bSum (0, 0);
-          for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
+            std::complex<double> bSum(0, 0);
+            for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
             {
-              bSum += narrowbandChannel(a1Index, bIndex) *
-                      std::conj (narrowbandChannel(a2Index, bIndex));
+                bSum += narrowbandChannel(a1Index, bIndex) *
+                        std::conj(narrowbandChannel(a2Index, bIndex));
             }
-          aQ(a1Index, a2Index) += bSum;
+            aQ(a1Index, a2Index) += bSum;
         }
     }
 
-  // Calculate beamforming vector from spatial correlation matrix.
-  PhasedArrayModel::ComplexVector aW = GetFirstEigenvector (aQ, svdIter, svdThresh);
+    // Calculate beamforming vector from spatial correlation matrix.
+    PhasedArrayModel::ComplexVector aW = GetFirstEigenvector(aQ, svdIter, svdThresh);
 
-  for (size_t i = 0; i < aW.GetSize (); ++i)
+    for (size_t i = 0; i < aW.GetSize(); ++i)
     {
-      aW[i] = std::conj (aW[i]);
+        aW[i] = std::conj(aW[i]);
     }
 
-  return std::make_pair (bW, aW);
+    return std::make_pair(bW, aW);
 }
 
 } // namespace ns3

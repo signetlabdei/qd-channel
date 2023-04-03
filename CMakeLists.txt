@@ -12,13 +12,13 @@ endif()
 
 build_lib(
     LIBNAME qd-channel
-    SOURCE_FILES 
+    SOURCE_FILES
       model/qd-channel-model.cc
       model/qd-channel-utils.cc
-    HEADER_FILES 
+    HEADER_FILES
       model/qd-channel-model.h
       model/qd-channel-utils.h
-    LIBRARIES_TO_LINK 
+    LIBRARIES_TO_LINK
       ${libcore}
       ${libspectrum}
     TEST_SOURCES test/qd-channel-test-suite.cc
