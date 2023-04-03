@@ -24,6 +24,10 @@
 #ifndef QD_CHANNEL_UTILS_H
 #define QD_CHANNEL_UTILS_H
 
+#include "ns3/core-module.h"
+#include "ns3/phased-array-model.h"
+#include "ns3/qd-channel-model.h"
+
 namespace ns3
 {
 

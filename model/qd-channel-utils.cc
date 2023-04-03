@@ -23,10 +23,6 @@
 
 #include "ns3/qd-channel-utils.h"
 
-#include "ns3/core-module.h"
-#include "ns3/phased-array-model.h"
-#include "ns3/qd-channel-model.h"
-
 NS_LOG_COMPONENT_DEFINE("QdChannelUtils");
 
 namespace ns3
