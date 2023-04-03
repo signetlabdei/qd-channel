@@ -155,7 +155,7 @@ QdChannelModel::ReadNodesPosition ()
       for (NodeList::Iterator nit = NodeList::Begin (); nit != NodeList::End (); ++nit)
         {
           Ptr<MobilityModel> mm = (*nit)->GetObject<MobilityModel> ();
-          if (mm != 0)
+          if (mm)
             {
               // TODO automatically import nodes' initial positions to avoid manual setting every time the scenario changes
               Vector3D pos = mm->GetPosition ();
@@ -578,24 +578,7 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
 
   // channel coffecient H[u][s][n];
   // considering only 1 cluster for retrocompatibility -> n=1
-  MatrixBasedChannelModel::Complex3DVector H;
-
-  H.resize (bSize);
-  for (uint64_t bIndex = 0; bIndex < bSize; bIndex++)
-    {
-      H[bIndex].resize (aSize);
-      for (uint64_t aIndex = 0; aIndex < aSize; aIndex++)
-        {
-          if (qdInfo.numMpcs > 0)
-            {
-              H[bIndex][aIndex].resize (1, std::complex<double> (0, 0));
-            }
-          else
-            {
-              H[bIndex][aIndex].resize (0, std::complex<double> (0, 0));
-            }
-        }
-    }
+  MatrixBasedChannelModel::Complex3DVector H (bSize, aSize, qdInfo.numMpcs);
 
   for (uint64_t mpcIndex = 0; mpcIndex < qdInfo.numMpcs; ++mpcIndex)
     {
@@ -651,12 +634,12 @@ QdChannelModel::GetNewChannel (Ptr<const MobilityModel> aMob,
               std::complex<double> aWeight = std::polar (1.0, aPhaseElementPhase);
 
               std::complex<double> ray = complexRay * bWeight * aWeight;
-              H[bIndex][aIndex][0] += ray;
+              H(bIndex, aIndex, 0) += ray;
             }
         }
     }
 
-  channelParams->m_channel = H;
+  channelParams-> m_channel = H;
   channelParams->m_delay = qdInfo.delay_s;
 
   channelParams->m_angle.clear ();

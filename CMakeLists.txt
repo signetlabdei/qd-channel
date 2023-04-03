@@ -6,7 +6,7 @@ endif()
 set(examples_as_tests_sources)
 if(${ENABLE_EXAMPLES})
     set(examples_as_tests_sources
-        test/qd-channel-examples-test-suite.cc
+        test/qd-channel-test-suite.cc
         )
 endif()
 
@@ -16,7 +16,7 @@ build_lib(
       model/qd-channel-model.cc
       model/qd-channel-utils.cc
     HEADER_FILES 
-      model/qd-channel.h
+      model/qd-channel-model.h
       model/qd-channel-utils.h
     LIBRARIES_TO_LINK 
       ${libcore}

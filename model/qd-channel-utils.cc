@@ -33,28 +33,28 @@ namespace ns3 {
 PhasedArrayModel::ComplexVector
 GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter, double threshold)
 {
-  PhasedArrayModel::ComplexVector antennaWeights;
-  uint16_t arraySize = A.size ();
+  uint16_t arraySize = A.GetNumCols ();
+  PhasedArrayModel::ComplexVector antennaWeights (arraySize);
   for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
     {
-      antennaWeights.push_back (A[0][eIndex]);
+      antennaWeights[eIndex] = A(0, eIndex);
     }
 
   uint32_t iter = 0;
   double diff = 1;
   while (iter < nIter && diff > threshold)
     {
-      PhasedArrayModel::ComplexVector antennaWeightsNew;
+      PhasedArrayModel::ComplexVector antennaWeightsNew (arraySize);
 
       for (uint16_t row = 0; row < arraySize; row++)
         {
           std::complex<double> sum (0, 0);
           for (uint16_t col = 0; col < arraySize; col++)
             {
-              sum += A[row][col] * antennaWeights[col];
+              sum += A(row, col) * antennaWeights[col];
             }
 
-          antennaWeightsNew.push_back (sum);
+          antennaWeightsNew[row] = sum;
         }
       // Normalize antennaWeights;
       double weighbSum = 0;
@@ -87,18 +87,12 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
   double svdThresh = 1e-8;
 
   // Generate transmitter side spatial correlation matrix
-  uint16_t aSize = params->m_channel.size ();
-  uint16_t bSize = params->m_channel[0].size ();
-  uint16_t clusterSize = params->m_channel[0][0].size ();
+  uint16_t aSize = params->m_channel.GetNumRows ();
+  uint16_t bSize = params->m_channel.GetNumCols ();
+  uint16_t clusterSize = params->m_channel.GetNumPages ();
 
   // Compute narrowband channel by summing over the tap index
-  MatrixBasedChannelModel::Complex2DVector narrowbandChannel;
-  narrowbandChannel.resize (aSize);
-
-  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
-    {
-      narrowbandChannel[aIndex].resize (bSize);
-    }
+  MatrixBasedChannelModel::Complex2DVector narrowbandChannel (aSize, bSize);
 
   for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
     {
@@ -107,21 +101,15 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
           std::complex<double> cSum (0, 0);
           for (uint16_t cIndex = 0; cIndex < clusterSize; cIndex++)
             {
-              cSum += params->m_channel[aIndex][bIndex][cIndex];
+              cSum += params->m_channel(aIndex, bIndex, cIndex);
             }
-          narrowbandChannel[aIndex][bIndex] = cSum;
+          narrowbandChannel(aIndex, bIndex) = cSum;
         }
     }
 
   // Compute the transmitter side spatial correlation matrix bQ = H*H, where H is the sum of H_n over n taps.
   // The * operator is the transponse conjugate
-  MatrixBasedChannelModel::Complex2DVector bQ;
-  bQ.resize (bSize);
-
-  for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
-    {
-      bQ[bIndex].resize (bSize);
-    }
+  MatrixBasedChannelModel::Complex2DVector bQ (bSize, bSize);
 
   for (uint16_t b1Index = 0; b1Index < bSize; b1Index++)
     {
@@ -130,10 +118,10 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
           std::complex<double> aSum (0, 0);
           for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
             {
-              aSum += std::conj (narrowbandChannel[aIndex][b1Index]) *
-                      narrowbandChannel[aIndex][b2Index];
+              aSum += std::conj (narrowbandChannel(aIndex, b1Index)) *
+                      narrowbandChannel(aIndex, b2Index);
             }
-          bQ[b1Index][b2Index] += aSum;
+          bQ(b1Index, b2Index) += aSum;
         }
     }
 
@@ -141,13 +129,7 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
   PhasedArrayModel::ComplexVector bW = GetFirstEigenvector (bQ, svdIter, svdThresh);
 
   // Compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over n clusters.
-  MatrixBasedChannelModel::Complex2DVector aQ;
-  aQ.resize (aSize);
-
-  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
-    {
-      aQ[aIndex].resize (aSize);
-    }
+  MatrixBasedChannelModel::Complex2DVector aQ (aSize, aSize);
 
   for (uint16_t a1Index = 0; a1Index < aSize; a1Index++)
     {
@@ -156,17 +138,17 @@ ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> 
           std::complex<double> bSum (0, 0);
           for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
             {
-              bSum += narrowbandChannel[a1Index][bIndex] *
-                      std::conj (narrowbandChannel[a2Index][bIndex]);
+              bSum += narrowbandChannel(a1Index, bIndex) *
+                      std::conj (narrowbandChannel(a2Index, bIndex));
             }
-          aQ[a1Index][a2Index] += bSum;
+          aQ(a1Index, a2Index) += bSum;
         }
     }
 
   // Calculate beamforming vector from spatial correlation matrix.
   PhasedArrayModel::ComplexVector aW = GetFirstEigenvector (aQ, svdIter, svdThresh);
 
-  for (size_t i = 0; i < aW.size (); ++i)
+  for (size_t i = 0; i < aW.GetSize (); ++i)
     {
       aW[i] = std::conj (aW[i]);
     }

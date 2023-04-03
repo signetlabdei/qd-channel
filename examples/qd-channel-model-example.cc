@@ -119,8 +119,8 @@ main (int argc, char *argv[])
   rxNode->AggregateObject (rxAntenna);
 
   // Initialize the devices in the ThreeGppSpectrumPropagationLossModel
-  spectrumLossModel->AddDevice (txDev, txAntenna);
-  spectrumLossModel->AddDevice (rxDev, rxAntenna);
+  // spectrumLossModel->AddDevice (txDev, txAntenna);
+  // spectrumLossModel->AddDevice (rxDev, rxAntenna);
 
   // Compute and print SNR
   Simulator::ScheduleNow (&ComputeSnr);
