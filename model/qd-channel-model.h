@@ -180,13 +180,13 @@ private:
   /**
    * Read all NodesPosition for the given scenario
    */
-  RtIdToNs3IdMap_t ReadNodesPosition (void);
+  void ReadNodesPosition ();
 
   /**
    * Read all QdFiles for the given scenario
    * \param rtIdToNs3IdMap a map between user file name to ns-3 user ID
    */
-  void ReadQdFiles (RtIdToNs3IdMap_t rtIdToNs3IdMap);
+  void ReadQdFiles ();
 
   /**
    * Get the list of QD file names in the given path
