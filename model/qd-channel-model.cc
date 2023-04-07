@@ -648,14 +648,14 @@ QdChannelModel::GetNewChannel(Ptr<const MobilityModel> aMob,
         Create<MatrixBasedChannelModel::ChannelParams>();
 
     channelMatrix->m_channel = H;
-    channelParams->m_delay = qdInfo.delay_s;
+    channelMatrix->m_generatedTime = Simulator::Now();
 
+    channelParams->m_delay = qdInfo.delay_s;
     channelParams->m_angle.clear();
     channelParams->m_angle.push_back(qdInfo.azAoa_rad);
     channelParams->m_angle.push_back(qdInfo.elAoa_rad);
     channelParams->m_angle.push_back(qdInfo.azAod_rad);
     channelParams->m_angle.push_back(qdInfo.elAod_rad);
-
     channelParams->m_generatedTime = Simulator::Now();
     channelParams->m_nodeIds = std::make_pair(aId, bId);
 
