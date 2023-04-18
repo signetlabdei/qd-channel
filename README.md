@@ -29,7 +29,7 @@ The example `qd-channel-model-example.cc` can be used as a starting point to und
 ### Prerequisites ###
 
 To run simulations using this module, you will need to install ns-3, and clone
-this repository inside the `contrib` directory. 
+this repository inside the `contrib` directory.
 Required dependencies include git and a build environment.
 
 Please check the [release page](https://github.com/signetlabdei/qd-channel/releases) for further information on the compatible versions of ns-3.

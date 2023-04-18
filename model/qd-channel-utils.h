@@ -24,7 +24,12 @@
 #ifndef QD_CHANNEL_UTILS_H
 #define QD_CHANNEL_UTILS_H
 
-namespace ns3 {
+#include "ns3/core-module.h"
+#include "ns3/phased-array-model.h"
+#include "ns3/qd-channel-model.h"
+
+namespace ns3
+{
 
 class MatrixBasedChannelModel;
 class PhasedArrayModel;
@@ -39,15 +44,16 @@ class PhasedArrayModel;
  * \param threshold difference threshold for consecutive iterations
  * \return the eigenvector associated to the largest eigenvalue
  */
-PhasedArrayModel::ComplexVector
-GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter, double threshold);
+PhasedArrayModel::ComplexVector GetFirstEigenvector(MatrixBasedChannelModel::Complex2DVector A,
+                                                    uint32_t nIter,
+                                                    double threshold);
 
 /**
  * Compute analog SVD beamforming for a given channel matrix.
  * SVD beamforming is intended to be analog when only the left and right eigenvector
  * associated to the largest singular value are used, thus needing a single RF chain
  * per device, although with variable phases and magnitudes for each antenna element.
- * 
+ *
  * If the channel matrix is 3D (i.e., wideband, where the third dimension is the tap index),
  * the equivalent 2D narrowband channel matrix is computed by summing over the third dimension.
  *
@@ -55,7 +61,7 @@ GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A, uint32_t nIter,
  * \return the beamforming vectors for the second and first dimension, respectively
  */
 std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector>
-ComputeSvdBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params);
+ComputeSvdBeamformingVectors(Ptr<const MatrixBasedChannelModel::ChannelMatrix> params);
 
 } // namespace ns3
 
